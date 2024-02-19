@@ -1,0 +1,95 @@
+Microsoft (R) Macro Assembler Version 6.10 		    11/04/96 09:41:27
+ASCIID.EXE						     Page 1 - 1
+
+
+				TITLE ASCIID.EXE
+				;PROGRAMA QUE DESPLIEGA LOS CARACTERES ASCII DEL 32 AL 255
+
+				PAGE 60,80
+				.RADIX 10
+
+ 0000				PILA SEGMENT PARA STACK 'STACK'
+ 0000  001E [			        DB 30 DUP('PILA')
+        50 49 4C 41
+       ]
+ 0078				PILA ENDS
+
+ 0000				DATOS SEGMENT PARA PUBLIC 'DATA'
+ 0000 50 52 4F 47 52 41		MENSAJE DB  'PROGRAMA QUE DESPLIEGA LOS CARACTER
+       4D 41 20 51 55 45	ES ASCII DEL 32 AL 255',10,13,'$'
+       20 44 45 53 50 4C
+       49 45 47 41 20 4C
+       4F 53 20 43 41 52
+       41 43 54 45 52 45
+       53 20 41 53 43 49
+       49 20 44 45 4C 20
+       33 32 20 41 4C 20
+       32 35 35 0A 0D 24
+ 003C				DATOS   ENDS
+
+ 0000				CODIGO  SEGMENT PARA PUBLIC 'CODE'
+				ASSUME DS:DATOS,CS:CODIGO,SS:PILA
+
+ 0000				PRINCIPAL       PROC    FAR
+ 0000  1E			                PUSH    DS
+ 0001  2B C0			                SUB     AX,AX
+ 0003  50			                PUSH    AX
+ 0004  B8 ---- R		                MOV     AX,DATOS
+ 0007  8E D8			                MOV     DS,AX
+ 0009  B4 09			                MOV     AH,9H ;FUNCION PARA ESCR
+				IBIR CADENA
+ 000B  BA 0000 R		                MOV     DX,OFFSET MENSAJE
+ 000E  CD 21			                INT     21H
+ 0010  B4 02			                MOV     AH,2H ;FUNCION PARA IMPR
+				IMIR CARACTER DE DL
+ 0012  B2 20			                MOV     DL,32 ;PRIMER CARACTER
+ 0014  CD 21			BUCLE:          INT     21H
+ 0016  FE C2			                INC     DL
+ 0018  75 FA			                JNZ     BUCLE
+ 001A  CB			                RET
+ 001B				PRINCIPAL       ENDP
+ 001B				CODIGO          ENDS
+
+				END             PRINCIPAL
+Microsoft (R) Macro Assembler Version 6.10 		    11/04/96 09:41:27
+ASCIID.EXE						     Symbols 2 - 1
+
+
+
+
+Segments and Groups:
+
+                N a m e                 Size     Length   Align   Combine Class
+
+CODIGO . . . . . . . . . . . . .	16 Bit	 001B	  Para	  Public  'CODE'
+					
+DATOS  . . . . . . . . . . . . .	16 Bit	 003C	  Para	  Public  'DATA'
+					
+PILA . . . . . . . . . . . . . .	16 Bit	 0078	  Para	  Stack	  'STACK'
+					 
+Microsoft (R) Macro Assembler Version 6.10 		    11/04/96 09:41:27
+ASCIID.EXE						     Symbols 3 - 1
+
+
+
+
+Procedures,  parameters and locals:
+
+                N a m e                 Type     Value    Attr
+
+PRINCIPAL  . . . . . . . . . . .	P Far	 0000	  CODIGO	Length= 001B Private
+Microsoft (R) Macro Assembler Version 6.10 		    11/04/96 09:41:27
+ASCIID.EXE						     Symbols 4 - 1
+
+
+
+
+Symbols:
+
+                N a m e                 Type     Value    Attr
+
+BUCLE  . . . . . . . . . . . . .	L Near	 0014	  CODIGO	
+MENSAJE  . . . . . . . . . . . .	Byte	 0000	  DATOS	
+
+	   0 Warnings
+	   0 Errors

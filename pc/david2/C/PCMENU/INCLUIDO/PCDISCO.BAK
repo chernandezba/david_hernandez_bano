@@ -1,0 +1,70 @@
+#ifndef __PCDISCO.H__
+#define __PCDISCO.H__
+
+/*------------------------------------------------------------------*/
+#ifndef __PCUTIL.H__
+typedef enum boolean BOOLEAN;
+enum boolean {FALSE=0,TRUE};
+#endif
+/*------------------------------------------------------------------*/
+struct sector0 {
+char msdos[8];
+unsigned int bytsector;
+unsigned char sectcluster;
+unsigned int secreservcomie;
+unsigned char copiasfat;
+unsigned int entradasdirprin,totalsec;
+unsigned char idfat;
+unsigned char sectorfat;
+unsigned int  sectorpista,numcaras,sectoresespreserv;
+unsigned char bitsfat;
+unsigned long grantotalsectores;
+};
+/*------------------------------------------------------------------*/
+struct ffblk_ex {
+	char		ff_name[13];
+	char		ff_attrib;
+	unsigned	int ff_ftime;
+	unsigned	int ff_fdate;
+	unsigned int ff_clusini;
+	unsigned long	ff_fsize;
+	unsigned char entradarel;
+	unsigned char sectorrel;
+	unsigned int ff_entrada;
+	char	 	*ff_bufferdirencontrado;
+	char 		ff_filtro[13];
+	unsigned int ff_cluster_ac;
+	unsigned long sector_ac;
+	};
+/*------------------------------------------------------------------*/
+struct _unidad {
+char diractual_disco[MAXPATH];
+unsigned int cluster_in_dir_actual;
+char *subdirectorio;
+BOOLEAN disco_duro;
+BOOLEAN particion_grande;
+};
+/*------------------------------------------------------------------*/
+void cogerinfodisco(struct sector0 *,int);
+void leesectorabs(int,unsigned int,unsigned long,char *);
+void leefat (char *,struct sector0 *,int);
+void leecluster(unsigned int ,int ,struct sector0 *,char *);
+unsigned int cogeproxclusterfichero(int ,unsigned int ,struct sector0 *,struct ffblk_ex *);
+int cambiadir (char *);
+int buscaprimero (char *,struct ffblk_ex *,char,BOOLEAN);
+int buscasiguiente(struct ffblk_ex *,BOOLEAN);
+void pcdisco_init(void);
+int cambiadisco(int);
+int cogedisco (void);
+void cogerdiractual(char *,int);
+unsigned char buscadir(struct ffblk_ex *aa);
+/*------------------------------------------------------------------*/
+extern int totalunidades,unidactual;
+/*------------------------------------------------------------------*/
+extern unsigned char unidadesdisco;
+/*------------------------------------------------------------------*/
+extern char unidlogicas[];
+/*------------------------------------------------------------------*/
+extern struct _unidad *unidad;
+/*------------------------------------------------------------------*/
+#endif

@@ -1,0 +1,851 @@
+#include <conio.h>
+#include <dir.h>
+#include <bios.h>
+#include <string.h>
+#include <mem.h>
+#include <io.h>
+#include <stdio.h>
+#include <dos.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <pcutil.h>
+#include <pcdisco.h>
+#include <pcescrib.h>
+
+
+/*-----------------------------------------------------------------------*/
+ESTRUCTARB *temp,*temp2,*temp3;
+ESTRUCTARB *arbol;
+struct filee *ficherosdir;
+struct estados estadotecla;
+enum errorrr {SISALIR=0,NOSALIR=1};
+struct errore errores[] = {
+SISALIR,"ERROR INTERNO:MINIMO>MAXIMO",
+SISALIR,"MEMORIA INSUFICIENTE",
+NOSALIR,"NO PUEDO HACER SHELL AL DOS",
+SISALIR,"NO HAY SUFICIENTE MEMORIA",
+SISALIR,"ERROR EN EL FORMATO DE FICHERO DE CONFIGURACION",
+SISALIR,"NO HAY MEMORIA O DEMASIADOS REGISTROS",
+NOSALIR,"NO SE PUEDE GRABAR EL FICHERO",
+NOSALIR,"NO PUEDO EJECUTAR EL PROGRAMA O INTENTO FALLIDO",
+NOSALIR,"INTENTO FALLIDO DE HACER FICHERO TEMPORAL",
+NOSALIR,"FICHERO PCMENU.DAT ERRONEO",
+NOSALIR,"INSUFICIENTE MEMORIA PARA GESTIONAR EL FICHERO",
+NOSALIR,"NO PUEDO EJECUTAR PCEJEC.EXE",
+NOSALIR,"ERROR AL ACCEDER AL DISCO",
+NOSALIR,"INSUFICIENTE MEMORIA PARA LEER FICHEROS O DEMASIADOS FICHEROS",
+SISALIR,"ERROR AL REALOCALIZAR MEMORIA",
+NOSALIR,"FICHERO PCMENU.DAT NO ENCONTRADO",
+SISALIR,"ERROR AL BUSCAR DIRECTORIO",
+SISALIR,"HEAP CORROMPIDO",
+NOSALIR,"TIENE QUE TENER NOMBRE",
+NOSALIR,"EXTENSION HA DE SER ~COM~ ~EXE~ O ~BAT~",
+NOSALIR,"PROGRAMA NO ENCONTRADO",
+NOSALIR,"NO PUEDO EJECUTAR PROGRAMA",
+SISALIR,"STACK AGOTADO",
+SISALIR,"ERROR AL LIBERAR MEMORIA"};
+struct ventann ventanas[]={
+1,2,22,3,siguarda,SOMBRA,"",NULL,  /* FICHEROS */
+11,2,29,3,siguarda,SOMBRA,"",NULL,  /* DISCO */
+18,2,38,3,siguarda,SOMBRA,"",NULL, /* CONFIGURACION */
+33,2,53,3,siguarda,SOMBRA,"",NULL, /* ESPECIAL */
+43,2,75,3,siguarda,SOMBRA,"",NULL, /* APLICACIONES */
+6,8,68,13,siguarda,SOMBRA,"ERROR",NULL,/* PANTALLA DE ERRORES */
+1,3,20,19,noguarda,BORDER,"",NULL,/*PANTALLA DE MOSTRAR ARBOL DIRECTORIOS*/
+30,10,50,12,siguarda,SOMBRA,"",NULL,/*PANTALLA DE MENSAJE*/
+22,3,78,19,noguarda,BORDER,"",NULL,/*PANTALLA DE MOSTRAR FICHEROS*/
+35,8,70,12,siguarda,SOMBRA,"ERROR DISCO",NULL,/*PANTALLA SI ERROR DEL DOS(0X25)*/
+10,8,55,10,siguarda,SOMBRA,"ERROR DOS",NULL,/*PANTALLA DE PCERRORE*/
+6,8,68,13,noguarda,SOMBRA,"ERROR CRITICO",NULL,/* PANTALLA DE ERROR CRITICO*/
+4,8,8,10,siguarda,SOMBRA,"CAMBIAR UNIDAD",NULL,/*PANTALLA DE CAMBIAR UNIDAD*/
+1,3,24,21,siguarda,BORDER,"INFORMACION",NULL,/*PANTALLA DE INFORMACION DEL DISCO*/
+1,24,80,25,noguarda,NOBORDER,"",NULL,/*PANTALLA DE MENSAJES INFERIORES(teclas)*/
+1,23,80,23,noguarda,NOBORDER,"",NULL,/*PANTALLA DE mostrarayuda*/
+30,10,53,12,siguarda,SOMBRA,"",NULL,/*PANTALLA DE "LEYENDO INFORMACION"*/
+1,3,78,21,siguarda,BORDER,"DIRECTORIO",NULL,/*FUNCION FUN_ARBOL*/
+1,1,80,25,siguarda,NOBORDER,"",NULL,/*SALIDADOS*/
+1,21,80,22,noguarda,NOBORDER,"",NULL,/*VENTANA DE FICHEROSSELECCIONADOS Y LO QUE REPRESENTAN*/
+1,2,80,2,noguarda,NOBORDER,"",NULL,/*ESCRIBEDIRECTORIO*/
+1,1,80,2,noguarda,NOBORDER,"",NULL,/*ABRIROPCION*/
+6,9,68,12,siguarda,SOMBRA,"ERROR DE FICHERO",NULL,/* PANTALLA DE ERRORES (FICHEROERROR)*/
+20,8,48,15,siguarda,SOMBRA,"LOGOTIPO",NULL, /* LOGOTIPO */
+1,5,77,12,siguarda,SOMBRA,"CONFIGURACION",NULL,  /* CAMBIARCONFIGURACION */
+1,10,77,12,siguarda,SOMBRA,"PARAMETROS",NULL,    /*PREGUNTA PARAMETROS (CTRL-ENTER*/
+1,1,80,25,noguarda,NOBORDER,"",NULL,/*SALIR*/
+6,9,68,12,siguarda,SOMBRA,"ERROR MSDOS(INT 25H)",NULL,/*ERRORES DE _absread*/
+};
+/*-----------------------------------------------------------------------*/
+extern int leidosub,leido;
+extern unsigned char actmodo;
+extern BOOLEAN noleeboot;
+/*-----------------------------------------------------------------------*/
+BOOLEAN salvarco;
+BOOLEAN arriba,abajo,escape;
+/*-----------------------------------------------------------------------*/
+unsigned long punteros,libre2,libre,npuntarb,gastado,sumatotalfich;
+unsigned int totalfich,numestru;
+int bufteclado,co2,y0,x0,long_nom;
+int VENTANASEL; /*ventana actual seleccionada*/
+int ULTIMAVENTANASEL; /* ultima ventana hecha con hacerven*/
+char ventanaa1= '²',ventana2='±',vent='²',marco= 'É',marco2='»',marco3='È',
+marco4='¼',marco5='Í',marco6='º',etiqueta_disco[15],
+anchoarbol;
+ESTRUCTARB *ultdireccion;
+char far *cadenaptr=" Ä";
+/*-------------------------------------------------------------------------*/
+static void near borraarbol(void);
+static void near pascal ponesubdirsp (ESTRUCTARB *);
+static char * near pascal ponecadenanumsubdir (ESTRUCTARB *);
+static void near pascal juntadossubdirs_up (ESTRUCTARB *,unsigned int );
+static void near pascal juntadossubdirs_down (ESTRUCTARB *,unsigned int );
+/*-------------------------------------------------------------------------*/
+void restaura(void)  {
+escape=FALSE;
+arriba=FALSE;
+abajo=FALSE;
+salvarco=FALSE;  }
+/*------------------------------------------------------------------*/               
+void borra_tec_buffer(void) {
+bioskey(1);
+}
+/*------------------------------------------------------------------*/               
+int tecla(void)
+{
+	int key, modifiers;
+
+	//si se pone como par metro 1 en bioskey devuelve 0 hasta que se pulsa una
+	//tecla
+	while (bioskey(1) == 0);
+
+	//si se pone como par metro 1 en bioskey  devuelve la tecla que est 
+	//en el buffer del teclado
+	bufteclado=bioskey(0);
+	key=bufteclado;
+	/*actualiza la variable de la tecla pulsada (2 bytes)*/
+	//si se pone como par metro 2 bioskey devuelve el estado de diversas
+	//teclas
+	modifiers = bioskey(2);
+	if (modifiers)
+	{
+		memset(&estadotecla,0,sizeof(estadotecla));
+		if (modifiers & RIGHT) estadotecla.sicaps=TRUE;
+		if (modifiers & LEFT)  estadotecla.sicaps=TRUE;
+		if (modifiers & CTRL)  estadotecla.sictrl=TRUE;
+		if (modifiers & ALT)   estadotecla.sialt=TRUE;
+		if (modifiers & CAPS)  estadotecla.sicaps=TRUE;
+	}
+	if (key & 0xff) {
+	  key&=0xff;
+	  if (key>='A' && key<='Z' && estadotecla.sicaps==FALSE) key+=32;
+	  };
+	  return(key);
+}
+/*---------------------------------------------------------------------*/
+void ventana(int x,int y,int x1,int y1) {
+
+wx=x;
+wy=y;
+wx1=x1;
+wy1=y1;
+ancho=(wx1-wx)+1;
+alto=(wy1-wy)+1;
+cscreenA =2*(wx-1) + 160*(wy-1);
+}
+/*------------------------------------------------------------------*/
+void escanea (char *escan)  {
+char *tempp;
+
+tempp=strchr(escan,0);
+--tempp;
+if (*tempp=='\\') *tempp=0;
+}
+/*------------------------------------------------------------------------*/
+void liberamem(void) { // libera memoria asignada para los ficheros y el
+//arbol de directorios
+
+farfree(ficherosdir);
+farfree(arbol);
+npuntarb=0;
+gastado=0;
+}
+/*--------------------------------------------------------------------*/
+static void near borraarbol(void) {
+int r;
+
+for (r=0;r<alto-1;r++) writechar (2,r+2,ancho-2,' ');
+}
+/*------------------------------------------------------------------*/
+static void near pascal juntadossubdirs_down (ESTRUCTARB *ptr,
+unsigned int yrela) {
+unsigned int contad=ptr->y+1,yprox=ptr->proxdir->y,cont2;
+//junta dos subdirectorios con una linea , uno se visualiza y el otro no
+// hacia abajo
+for (cont2=0;yrela+cont2<=alto;++cont2) {
+  if (contad+cont2==yprox) break;
+  writestr (ptr->x,yrela+cont2,0,"³");
+  };
+}
+/*------------------------------------------------------------------*/
+static void near pascal juntadossubdirs_up (ESTRUCTARB *ptr,
+unsigned int yrela) {
+unsigned int yant=ptr->antdir->y,contad=ptr->y-1,cont2;
+//junta dos subdirectorios con una linea , uno se visualiza y el otro no
+// hacia arriba
+for (cont2=0;yrela-cont2>1;++cont2) {
+  if (contad-cont2==yant) break;
+  writestr (ptr->x,yrela-cont2,0,"³");
+  };
+}
+
+/*------------------------------------------------------------------*/
+static char * near pascal ponecadenanumsubdir (ESTRUCTARB *ptr) {
+unsigned char subnivel;
+
+subnivel=0;
+while (ptr->dirsup!=NULL) {
+  ++subnivel;
+  ptr=ptr->dirsup;
+  };
+*cadenaptr=subnivel+'0';
+return(cadenaptr);
+};
+/*------------------------------------------------------------------*/
+void ponerarbol(unsigned int _yrel,ESTRUCTARB *a) {
+register at=atributo,aven=VENTANASEL;
+unsigned int n,yr;
+
+cambiarven(6);
+atributo=colorf2(ARBOLV);
+borraarbol();
+n=0;
+while (a->y<_yrel) {
+  a=calculadireccion(a,(unsigned long)sizeof(struct estructarb));
+  ++n;
+  };
+for (yr=a->y-2;n<npuntarb;++n,a=calculadireccion(a,(unsigned long)
+  sizeof(struct estructarb))){
+  if (a->y-yr>alto) continue;
+  if (a->dirsup!=NULL)  {
+	 if (a->x==a->dirsup->x)
+		writestr(a->x,a->y-yr,0,ponecadenanumsubdir(a));
+	 else
+		writestr(a->x,a->y-yr,0,(a->proxdir==NULL && a->antdir==NULL) ? "À" :
+		(a->proxdir!=NULL) ? "Ã" : "À");
+  }
+  writestr(a->x+1,a->y-yr,0,a->nombredir);
+  if (a->proxdir!=NULL) juntadossubdirs_down(a,(a->y-yr)+1);
+  if (a->antdir!=NULL)  juntadossubdirs_up(a,(a->y-yr)-1);
+	};
+atributo=at;
+cambiarven(aven);
+}
+/*-------------------------------------------------------------------------*/
+void ponerror(int errorno) {
+  char buffererror[80];
+  register atr=atributo,vents=VENTANASEL;
+
+
+if (errores[errorno].condicion==SISALIR)  {
+  atributo=colorf2(ERRORC);
+  sprintf(buffererror,"ERROR %d : %s",errorno,errores[errorno].menerr);
+  ajventana(11,strlen(buffererror));
+  hacerven(11,colorf2(ERRORC));
+  writestr(2,2,1,buffererror);
+  writestr(2,3,0,"PULSA TECLA");
+  campana();
+  tecla();
+  ventana(1,1,80,25);
+  atributo=colorf2(SALIDADOS);
+  fillwin(' ');
+  _gotoxy(1,1);
+  __setcursortype(_NORMALCURSOR);
+  exit(EXIT_FAILURE);  }
+if (errores[errorno].condicion==NOSALIR) {
+  atributo=colorf2(ERRORN);
+  sprintf(buffererror,"ERROR %d : %s ",errorno,errores[errorno].menerr);
+  ajventana(5,strlen(buffererror));
+  hacerven(5,colorf2(ERRORN));
+  writestr(2,2,1,buffererror);
+  writestr(2,3,0,"PULSE TECLA");
+  campana();
+  tecla();
+  cerrarven(5);
+  atributo=atr;
+  cambiarven(vents);}
+}
+/*-------------------------------------------------------------------------*/
+int dial(unsigned char x,unsigned char y,unsigned char minimo,
+unsigned char maximo,int longitud,char *salida,int atrileer,
+BOOLEAN escape2,BOOLEAN arriba2,BOOLEAN abajo2,BOOLEAN simayu,char carnulo){
+
+ int bien,tt,buff=atributo;
+ char *isalida=salida,*ultcaracter=salida,a;
+
+--longitud;
+bien=0;
+atributo=atrileer;
+if (minimo>maximo) ponerror(0);
+restaura();
+_gotoxy(x,y);
+  while (bien==0) {
+	 tt=tecla();
+	 if(tt>=minimo && tt<=maximo && salida<=isalida+longitud || tt=='\b' ||
+	 tt==ENTER || tt==UP || tt==DOWN || tt==ESC || 
+	 tt==A_A || tt==LEFT || tt==RIGHT)  {
+		switch(tt)  {
+	case BS:if (salida!=isalida)  {
+			 writestr(x-1,y,0," ");
+			 --salida;
+			 *salida=' ';
+			 --x;
+			 _gotoxy(x,y);
+			 --ultcaracter;
+			 if (ultcaracter!=salida) {
+				strcpy(salida,salida+1);
+				isalida[longitud-1]=' ';
+				isalida[longitud]='\x0';
+				a=*ultcaracter;
+				*ultcaracter='\x0';
+				writestr(x,y,0,salida);
+				*ultcaracter=a;
+				};
+			 };
+		  break;
+	case ENTER:bien=1;
+		  break;
+	case DOWN:if (abajo2==TRUE)  bien=1;
+				 abajo=TRUE;
+		  break;
+	case UP:if (arriba2==TRUE) bien=1;
+			  arriba=TRUE;
+		  break;
+	case LEFT:if (salida!=isalida) {
+				 --salida; 
+				 --x;
+				 _gotoxy(x,y);};
+				 break;
+	case RIGHT:if (salida<ultcaracter) {
+				  ++salida; 
+				  ++x;
+				  _gotoxy(x,y);};
+				  break;
+	case ESC:if (escape2==TRUE) bien=1;
+				escape=TRUE;
+		 break;
+	case A_A:salvarco=TRUE;
+		bien=TRUE;
+		break;
+	default:if (simayu==TRUE) 
+				 if (isalpha(tt)) tt=_toupper(tt);
+			  writechar(x,y,1,tt);
+			  *salida=tt;
+			  ++salida;
+			  ++x;
+			  _gotoxy(x,y);
+			  if (salida>ultcaracter) ultcaracter=salida;
+			  break;
+	}
+      }
+		else   if (isprint(tt)) campana();
+	 }
+atributo=buff;
+if (escape!=TRUE) {
+ if (salida==isalida)  {
+	*salida=carnulo;
+	++salida;
+	*salida='\x0';}
+ else *ultcaracter='\x0';
+ };
+atributo=buff;
+return((int)((long)ultcaracter-(long)isalida));
+}
+/*-----------------------------------------------------------------------*/
+void ponesubdirs (ESTRUCTARB *pones)
+{
+ponesubdirsp(pones);
+};
+/*-----------------------------------------------------------------------*/
+static void near pascal ponesubdirsp (ESTRUCTARB *pones) {
+struct ffblk_ex arbsub;
+unsigned int oldclusteract;
+
+poneotro:
+if (_SP < sizeof(struct ffblk_ex)+sizeof(unsigned int)+20) ponerror(22);
+buscaprimero("*.*",&arbsub,FA_DIREC,TRUE);
+if (((arbsub.ff_attrib & FA_DIREC) && arbsub.ff_name[0]=='.') ||
+  (arbsub.ff_attrib & FA_DIREC)==0)
+  // si no se ha encontrado ya un subdirectorio v lido
+  if (!buscadir(&arbsub)) return;
+temp=pones;
+pones->subdir=ultdireccion=calculadireccion(ultdireccion,(unsigned long)
+sizeof(ESTRUCTARB));
+npuntarb++;
+gastado+=(unsigned long)sizeof(ESTRUCTARB);
+if (gastado>libre) ponerror(1);
+y0++;
+if (x0+13<anchoarbol) ++x0;
+pones=pones->subdir;
+setmem(pones,sizeof(ESTRUCTARB),0);
+pones->dirsup=temp;
+pones->y=y0;
+pones->x=x0;
+strcpy(pones->nombredir,arbsub.ff_name);
+pones->atributo=arbsub.ff_attrib;
+pones->clusterinicial=arbsub.ff_clusini;
+oldclusteract=unidad[unidactual].cluster_in_dir_actual;
+unidad[unidactual].cluster_in_dir_actual=arbsub.ff_clusini;/* = cambiadir(arbsub.ff_name); */
+ponesubdirsp(pones);
+buscaotro:x0=pones->x;
+unidad[unidactual].cluster_in_dir_actual=oldclusteract;/* = cambiadir("..");*/
+leidosub=0;
+if (!buscadir(&arbsub)) return;
+temp2=pones;
+temp3=pones->dirsup;
+pones->proxdir=ultdireccion=calculadireccion(ultdireccion,(unsigned long)
+sizeof(ESTRUCTARB));
+npuntarb++;
+gastado+=(unsigned long)sizeof(ESTRUCTARB);
+if (gastado>libre) ponerror(1);
+pones=pones->proxdir;
+setmem(pones,sizeof(ESTRUCTARB),0);
+pones->antdir=temp2;
+pones->atributo=arbsub.ff_attrib;
+pones->clusterinicial=arbsub.ff_clusini;
+pones->dirsup=temp3;
+y0++;
+pones->y=y0;
+pones->x=x0;
+strcpy(pones->nombredir,arbsub.ff_name);
+oldclusteract=unidad[unidactual].cluster_in_dir_actual;
+unidad[unidactual].cluster_in_dir_actual=arbsub.ff_clusini;/* = cambiadir(arbsub.ff_name);*/
+ponesubdirsp(pones);
+goto buscaotro;
+}
+/*----------------------------------------------------------------------*/
+void meteficheros (struct filee *fi)
+{
+struct ffblk_ex f;
+int done;
+
+totalfich=0;
+done=buscaprimero("*.*",&f,FA_RDONLY | FA_HIDDEN | FA_SYSTEM | FA_ARCH,
+TRUE);
+while (!done)
+{
+  if (!done && (!(f.ff_attrib & (FA_DIREC | FA_LABEL)))) {
+	fi[totalfich].dia=f.ff_fdate;
+	fi[totalfich].hora=f.ff_ftime;
+	fi[totalfich].atributo=f.ff_attrib;
+	fi[totalfich].longitud=f.ff_fsize;
+	strcpy(fi[totalfich].nombre,f.ff_name);
+	fi[totalfich].num_fich_sel=0;
+	++totalfich;
+	if (totalfich*sizeof(struct filee)>libre2) ponerror(13);
+	}
+  done=buscasiguiente(&f,TRUE);
+  }
+}
+/*----------------------------------------------------------------------*/
+void buscararbol(int unidad)
+  {
+  struct ffblk_ex fich;
+  char bufint[MAXPATH],*pv;
+  int diski=cogedisco(),pru2,at=atributo,ventsa=VENTANASEL;
+
+hacerven(7,colorf2(ARBOLV));
+atributo=colorf2(ARBOLV);
+writestr(3,2,0,"LEYENDO DIRECTORIOS");
+cambiadisco(unidad);
+cogerdiractual(bufint,MAXPATH);
+cambiadir("\\");
+if (!buscaprimero("*.*",&fich,FA_LABEL,TRUE))
+ strcpy(etiqueta_disco,fich.ff_name);
+if ((pv=strchr(etiqueta_disco,'.'))!=NULL) {
+ strcpy(pv,pv+1);
+ };
+atributo=colorf2(MARCO);
+pru2=buscaprimero("*.*",&fich,FA_DIREC,TRUE);
+if (pru2==0) {
+  npuntarb=0;
+  libre=farcoreleft()-16L;
+  if ((arbol=(ESTRUCTARB *)farmalloc(libre))==NULL) ponerror(1);
+  ++npuntarb;
+  ultdireccion=arbol;
+  setmem(arbol,sizeof(ESTRUCTARB),0);
+  y0=2;
+  x0=2;
+  arbol->x=x0;
+  arbol->y=y0;
+  sprintf(arbol->nombredir,"%c:\\",(unsigned char)unidad+'A');
+  arbol->atributo=fich.ff_attrib;
+  arbol->clusterinicial=fich.ff_clusini;
+  noleeboot=TRUE;
+  ponesubdirs(arbol);
+  noleeboot=FALSE;
+  arbol=farrealloc(arbol,gastado+sizeof(struct estructarb));};
+  cerrarven(7);
+  cambiadisco(diski);
+  cambiadir(bufint);
+  atributo=at;
+  cambiarven(ventsa);
+  }
+/*------------------------------------------------------------------------*/
+void escribefichero(int _y,struct filee *n) {
+char bufferfich[80],*atributos="....",u[MAXDIR],u1[MAXDRIVE],
+nombre[MAXFILE],extension[MAXEXT];
+int atributo=n->atributo,bandera;
+struct fichinfo horadia;
+
+strset(atributos,'.');
+if (atributo & FA_HIDDEN) atributos[0]='O';
+if (atributo & FA_SYSTEM) atributos[1]='S';
+if (atributo & FA_RDONLY) atributos[2]='L';
+if (atributo & FA_ARCH) atributos[3]='A';
+bandera=fnsplit(n->nombre,u1,u,nombre,extension);
+if (!(bandera & EXTENSION)) strset(extension,' ');
+if (!(bandera & FILENAME))  strset(nombre,' ');
+poneinfofichero(&horadia,n);
+  if (n->num_fich_sel)
+  sprintf(bufferfich,"%-8s%-4s % 10lu %02u/%02u/%04u %02u:%02u   %4s % 5u",
+  nombre,extension,n->longitud,horadia.dia,horadia.mes,horadia.anyo,
+  horadia.hora,horadia.minutos,atributos,n->num_fich_sel);
+else
+  sprintf(bufferfich,"%-8s%-4s % 10lu %02u/%02u/%04u %02u:%02u   %4s      ",
+  nombre,extension,n->longitud,horadia.dia,horadia.mes,horadia.anyo,
+  horadia.hora,horadia.minutos,atributos);
+writestr(2,_y,0,bufferfich);
+}
+/*------------------------------------------------------------------------*/
+void mostrar_ficheros(unsigned int desde) {
+int _atributo=atributo,_ventanasel=VENTANASEL;
+unsigned long contador;
+char buf[80];
+
+cambiarven(8);
+atributo=colorf2(FICHEROSV);
+writestr(2,2,0,"NOMBRE         LONGITUD FECHA      HORA   ATRIB NUM S");
+setmem(&buf,ancho,' ');
+buf[ancho]='\x0';
+for (contador=0;contador<alto-2;contador++,desde++) {
+  if (totalfich>desde)
+	 escribefichero(contador+3,&ficherosdir[desde]);
+  else writestr(2,contador+3,0,buf);
+  }
+if (!totalfich) writestr(2,3,0,"NINGUNO");
+cambiarven(_ventanasel);
+atributo=_atributo;
+}
+/*------------------------------------------------------------------------*/
+void mostrardirectorio(int unidad) {
+register unids,_ventanasele=VENTANASEL,_atr=atributo,n;
+unsigned long core=farcoreleft();
+
+hacerven(7,colorf2(FICHEROSV));
+atributo=colorf2(FICHEROSV);
+writestr(3,2,0,"LEYENDO FICHEROS");
+unids=cogedisco();
+cambiadisco(unidad);
+libre2=(core>65536l) ? (65536l) : (core);
+if ((ficherosdir=(struct filee *)farmalloc(libre2))==NULL) 
+  ponerror(1);
+meteficheros(ficherosdir);
+if (!totalfich) farfree(ficherosdir);
+if ((ficherosdir=(struct filee *)
+  _realloc(ficherosdir,(totalfich+1)*sizeof(struct filee)))==NULL)
+  ponerror(1);
+cerrarven(7);
+hacerven(8,colorf2(FICHEROSV));
+atributo=colorf2(FICHEROSV);
+mostrar_ficheros(0);
+cambiadisco(unids);
+atributo=_atr;
+cambiarven(_ventanasele);
+sumatotalfich=0;
+for (n=0;n!=totalfich;n++)
+ sumatotalfich+=ficherosdir[n].longitud;
+}
+/*---------------------------------------------------------------*/
+void poneinfofichero(struct fichinfo *f,struct filee *ff) {
+unsigned int _hora,_fecha;
+unsigned char horas,minutos,mes,dia,anyo;
+
+_hora=ff->hora;
+_fecha=ff->dia;
+horas=_hora>>11;
+minutos=_hora>> 5 ;
+minutos&=63;
+anyo=_fecha>>9;
+anyo=(anyo+1980);
+mes=_fecha >> 5;             
+mes&=15;
+dia=_fecha & 31;
+f->hora=horas;
+f->minutos=minutos;
+f->anyo=anyo;
+f->mes=mes;
+f->dia=dia;
+};
+/*----------------------------------------------------------------*/
+void scrollficherosarriba(void){
+
+union REGS _registros;
+
+_registros.h.ch=ventanas[8].y+1;
+_registros.h.cl=ventanas[8].x;
+_registros.h.dh=ventanas[8].yy-1;
+_registros.h.dl=ventanas[8].xx-2;
+_registros.h.al=1;
+_registros.h.bh=(unsigned char) atributo;
+_registros.h.ah=0x06;
+int86(0x10,&_registros,&_registros);
+}
+/*----------------------------------------------------------------*/
+void scrollficherosabajo(void){
+
+union REGS _registros;
+
+_registros.h.ch=ventanas[8].y+1;
+_registros.h.cl=ventanas[8].x;
+_registros.h.dh=ventanas[8].yy-1;
+_registros.h.dl=ventanas[8].xx-2;
+_registros.h.al=1;
+_registros.h.bh=(unsigned char) atributo;
+_registros.h.ah=0x07;
+int86(0x10,&_registros,&_registros);
+}
+
+/*---------------------------------------------------------------------*/
+void poner_etiqueta_disco() {
+char tempo[80];
+int vent=VENTANASEL,atrisal=atributo;
+
+cambiarven(6);
+atributo=colorf2(ARBOLV);
+sprintf(tempo,"ETIQUETA:%s",etiqueta_disco);
+centrar(alto+1,0,tempo);
+atributo=atrisal;
+cambiarven(vent);
+};
+/*---------------------------------------------------------------------*/
+void ficheroerror(int nerror) {
+//funci¢n que se utiliza cuando hay un error producido por el
+//acceso a un fichero
+char _error[80];
+int oldvent=VENTANASEL,oldatri=atributo;
+
+switch (nerror) {
+  case ENOFILE:strcpy(_error,"FICHERO NO ENCONTRADO");
+					break;
+  case ENOPATH:strcpy(_error,"CAMINO(PATH) NO ENCONTRADO");
+					break;
+  case EINVDRV:strcpy(_error,"UNIDAD INCORRECTA");
+					break;
+  case ENOTSAM:strcpy(_error,"NO ES EL MISMO DISPOSITIVO");
+					break;
+  case ENMFILE:strcpy(_error,"NO MAS FICHEROS");
+					break;
+  case EMFILE:strcpy(_error,"DEMASIADOS FICHEROS ABIERTOS");
+				  break;
+  case EACCES:strcpy(_error,"ACCESO DENEGADO");
+				  break;
+  case EBADF:strcpy(_error,"NUMERO INCORRECTO");
+				 break;
+  case EFAULT:strcpy(_error,"ERROR DESCONOCIDO");
+				  break;
+  case EEXIST:strcpy(_error,"FICHERO EXISTE");
+				  break;
+  default:strcpy(_error,"ERROR DESCONOCIDO");
+			 break;
+			 };
+ajventana(22,strlen(_error)+2);
+atributo=colorf2(ERRORN);
+hacerven(22,colorf2(ERRORN));
+centrar(2,0,_error);
+centrar(4,0,"PULSE TECLA");
+campana();
+tecla();
+cerrarven(22);
+cambiarven(oldvent);
+atributo=oldatri;
+};
+/*---------------------------------------------------------------------*/
+void borrafich(char *name)  {
+int handle;
+
+_chmod(name,1,FA_ARCH);
+if ((handle=_open(name,O_RDONLY))!=-1) {
+  _close(handle);
+  unlink(name);
+  };
+};
+/*--------------------------------------------------------------------*/
+int ejecutacomando (char *comando,int condicion) { /* condicion : 1 espera tecla , 0 no espera*/
+int res,a=atributo,b=VENTANASEL;
+union REGS regs;
+
+hacerven(18,colorf2(SALIDADOS));
+atributo=colorf2(SALIDADOS);
+if (!strcmp(comando,getenv("COMSPEC"))) {
+  writestr(1,1,0,"TECLEE EXIT PARA VOLVER A PCMENU");
+  _gotoxy(1,2);
+  __setcursortype(_NORMALCURSOR);
+  };
+res=system(comando);
+regs.h.ah=0;
+regs.h.al=actmodo;
+int86(0x10,&regs,&regs);
+regs.x.ax=0x1003;
+regs.h.bl=0;
+int86(0x10,&regs,&regs);
+__setcursortype(_NOCURSOR);
+if (condicion==1 && res!=-1) {
+  writestr(_wherex(),_wherey(),0,"PULSE TECLA PARA VOLVER A PCMENU");
+  tecla();
+  };
+cerrarven(18);
+cambiarven(b);
+atributo=a;
+return(res);
+};
+/*--------------------------------------------------------------------*/
+void far * calculadireccion(void far *oldir,unsigned long asumar)  {
+unsigned long dirabs;
+unsigned int segmento,offset;
+
+dirabs=((unsigned long)FP_SEG(oldir) << 4)+(unsigned long)FP_OFF(oldir);
+dirabs+=asumar;
+segmento=(unsigned int)(dirabs >> 4);
+offset=(unsigned int)(dirabs-((unsigned long)segmento << 4));
+return(MK_FP(segmento,offset));
+};
+/*-------------------------------------------------------------------------*/
+void hacerven(int numerovent,int colorfff){
+int atritemp,_xx,_yy,flags;
+
+if (ventanas[numerovent].tipo_border==NOBORDER) flags=0;
+if (ventanas[numerovent].tipo_border==BORDER) flags=1;
+if (ventanas[numerovent].tipo_border==SOMBRA) flags=2;
+ventana(ventanas[numerovent].x,ventanas[numerovent].y,
+ventanas[numerovent].xx,ventanas[numerovent].yy);
+if (ventanas[numerovent].guarda==siguarda) {
+  if ((ventanas[numerovent].memptr=malloc(2*(((unsigned long)ancho+3l)*
+  ((unsigned long)alto+2l))))==
+  NULL) ponerror(1);
+  if (!flags) {
+	 _xx=ventanas[numerovent].xx;
+	 _yy=ventanas[numerovent].yy; };
+  if (flags==1) {
+	 _xx=ventanas[numerovent].xx+1;
+	 _yy=ventanas[numerovent].yy+1;};
+  if (flags==2){
+	 _xx=ventanas[numerovent].xx+3;
+	 _yy=ventanas[numerovent].yy+2; };
+  gettext(ventanas[numerovent].x,ventanas[numerovent].y,_xx,_yy,
+  ventanas[numerovent].memptr);
+  };
+hacerfondo(colorfff);
+if (flags) hacermarco(colorf2(MARCO));
+if (flags==2) hacersombra(colorf2(MARCO));
+ultimoatributo=atributo;
+atributo=colorf2(TITULO);
+if (ventanas[numerovent].titulo[0]!='\x0')
+	 centrar(1,0,ventanas[numerovent].titulo);
+atributo=colorfff;
+ULTIMAVENTANASEL=VENTANASEL;
+VENTANASEL=numerovent;
+}
+/*-------------------------------------------------------------------------*/
+void cerrarven(int numerovent){
+int _xx,_yy,flags;
+
+if (ventanas[numerovent].tipo_border==NOBORDER) flags=0;
+if (ventanas[numerovent].tipo_border==BORDER) flags=1;
+if (ventanas[numerovent].tipo_border==SOMBRA) flags=2;
+  if (ventanas[numerovent].memptr!=NULL) {
+	  if (ventanas[numerovent].guarda==siguarda) {
+		if (!flags) {
+		  _xx=ventanas[numerovent].xx;
+		  _yy=ventanas[numerovent].yy; };
+	  if (flags==1) {
+		 _xx=ventanas[numerovent].xx+1;
+		 _yy=ventanas[numerovent].yy+1;};
+	  if (flags==2){
+		 _xx=ventanas[numerovent].xx+3;
+		 _yy=ventanas[numerovent].yy+2; };
+		puttext(ventanas[numerovent].x,ventanas[numerovent].y,_xx,_yy,
+		ventanas[numerovent].memptr);
+		free(ventanas[numerovent].memptr);
+	 };
+  };
+cambiarven(ULTIMAVENTANASEL);
+atributo=ultimoatributo;
+}
+/*-------------------------------------------------------------------------*/
+void cambiarven(int numvent)
+{
+  ventana(ventanas[numvent].x,ventanas[numvent].y,
+  ventanas[numvent].xx,ventanas[numvent].yy);
+  VENTANASEL=numvent;
+}
+/*----------------------------------------------------------------------*/
+void hacermarco(int at) {
+register ats=atributo,contador2;      
+
+atributo=at;
+writechar (1,1,1,marco);
+writechar (2,1,(ancho-1),marco5);
+writechar ((1+ancho),1,1,marco2);
+for (contador2=1;(contador2-1)<alto;contador2++)
+	{
+	writechar (1,(contador2+1),1,marco6);
+	writechar ((ancho+1),(contador2+1),1,marco6);
+	}
+writechar (1,(alto+1),1,marco3);
+writechar (2,(alto+1),(ancho-1),marco5);
+writechar ((1+ancho),(alto+1),1,marco4);
+atributo=ats;
+}
+
+/*-------------------------------------------------------------------------*/
+void hacerfondo(unsigned char colorff){
+unsigned char oldatri=atributo;
+
+atributo=colorff;
+fillwin(' ');
+atributo=oldatri;
+}
+/*-------------------------------------------------------------------*/
+void hacersombra(int t){
+register contador2,ats=atributo;
+
+atributo=t;
+writechar (2,(alto+2),ancho+2,ventana2);
+for (contador2=2;(contador2-2)<alto;contador2++)
+  writechar (ancho+2,contador2,2,ventana2);
+atributo=ats;
+}
+/*--------------------------------------------------------------------*/
+void seleccionaventana(int a_vent,int atrib) {
+register atrs=atributo;
+
+cambiaratrmarco(colorf2(MARCO));
+cambiarven(a_vent);
+cambiaratrmarco(atrib);
+atributo=atrs;
+}
+/*-------------------------------------------------------------------------*/
+void ajventana(int numven,int longi) { //ajusta el ancho de la ventana a longi y la centra
+int lon; //para saber la longitud del t¡tulo de la ventana
+int sum; //para saber el factor de suma en ventanas con borders,etc
+int lonmax; //la longitud de lo que ocupa m s(longi o la longitud del t¡tulo de la ventana)
+
+if (ventanas[numven].tipo_border==BORDER || ventanas[numven].tipo_border==
+SOMBRA) sum=2;
+if (ventanas[numven].tipo_border==NOBORDER) sum=0;
+lon=strlen(ventanas[numven].titulo);
+if (lon>longi) lonmax=lon; else lonmax=longi;
+ventanas[numven].x=(80-lonmax+1) /2;
+ventanas[numven].xx=ventanas[numven].x+lonmax+sum;
+}

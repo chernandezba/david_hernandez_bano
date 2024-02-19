@@ -1,0 +1,1 @@
+MASM %1,C:\BC\%1.OBJ,%1.LST

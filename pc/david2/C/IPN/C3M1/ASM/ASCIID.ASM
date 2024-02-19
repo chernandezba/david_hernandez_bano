@@ -1,0 +1,36 @@
+TITLE ASCIID.EXE
+;PROGRAMA QUE DESPLIEGA LOS CARACTERES ASCII DEL 32 AL 255
+
+PAGE 60,80
+.RADIX 10
+
+PILA SEGMENT PARA STACK 'STACK'
+        DB 30 DUP('PILA')
+PILA ENDS
+
+DATOS SEGMENT PARA PUBLIC 'DATA'
+MENSAJE DB  'PROGRAMA QUE DESPLIEGA LOS CARACTERES ASCII DEL 32 AL 255',10,13,'$'
+DATOS   ENDS
+
+CODIGO  SEGMENT PARA PUBLIC 'CODE'
+ASSUME DS:DATOS,CS:CODIGO,SS:PILA
+
+PRINCIPAL       PROC    FAR
+                PUSH    DS
+                SUB     AX,AX
+                PUSH    AX
+                MOV     AX,DATOS
+                MOV     DS,AX
+                MOV     AH,9H ;FUNCION PARA ESCRIBIR CADENA
+                MOV     DX,OFFSET MENSAJE
+                INT     21H
+                MOV     AH,2H ;FUNCION PARA IMPRIMIR CARACTER DE DL
+                MOV     DL,32 ;PRIMER CARACTER
+BUCLE:          INT     21H
+                INC     DL
+                JNZ     BUCLE
+                RET
+PRINCIPAL       ENDP
+CODIGO          ENDS
+
+END             PRINCIPAL

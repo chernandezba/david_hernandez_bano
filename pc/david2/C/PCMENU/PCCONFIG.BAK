@@ -1,0 +1,154 @@
+#include <errno.h>
+#include <dos.h>
+#include <io.h>
+#include <dir.h>
+#include <stdio.h>
+#include <string.h>
+#include <mem.h>
+#include <pcutil.h>
+
+extern BOOLEAN escape,arriba,salvarco;
+char *mensajesconf[]= {
+"DIRECTORIO DEL PROGRAMA:",
+"NOMBRE :          EXTENSION:",
+"NOMBRE DEL PROGRAMA:",
+"APLICACION DEL PROGRAMA:",
+" ",
+"PARAMETROS DEL PROGRAMA:",
+"ESC ABORTAR ALT-A SALVAR CONFIGURACION",};
+int r;
+void restaura();
+/*----------------------------------------------------------------------*/
+static void near proteccion (void);
+static void near quitaespaciosfinal(char *s);
+/*----------------------------------------------------------------------*/
+static void near proteccion (void) {
+if (r==0 && salvarco==TRUE) {
+  salvarco=FALSE;
+  campana();
+  };
+}
+/*----------------------------------------------------------------------*/
+static void near quitaespaciosfinal(char *s) {
+char *p;
+
+p=strchr(s,0);
+if (p!=s) {
+  while (p!=s) {
+	 --p;
+	 if (*p==' ') *p='\x0'; else break;
+	 };
+  };
+};
+/*----------------------------------------------------------------------*/
+void nuevconfproc(void) {
+int i,fichero,atributo2=atributo,vens=VENTANASEL;
+char *conftemp,nombre[MAXFILE],ext[MAXEXT],nombresearch[MAXPATH],
+drive[MAXDRIVE],dir[MAXDIR],file[MAXFILE],_ext[MAXEXT],
+encontrado[MAXPATH],*p;
+
+if ((conftemp=farmalloc(sizeof(datos)))==NULL) ponerror(10);
+memcpy(conftemp,&datos,sizeof(datos));
+hacerven(24,colorf2(CAMBIARCONFIGURA));
+atributo=colorf2(CAMBIARCONFIGURA);
+for (i=0;i<7;i++)  
+writestr(2,i+2,1,mensajesconf[i]);
+i=0;
+r=0;
+restaura();
+__setcursortype(_NORMALCURSOR);
+setmem(&datos,sizeof(datos),0);
+while (r<=MAXSOFT && escape!=TRUE && salvarco!=TRUE) {
+  writechar(26,2,40,' ');
+  writechar(30,3,3,' ');
+  writechar(10,3,8,' ');
+  writechar(22,4,30,' ');
+  writechar(2,6,76,' ');
+  writechar(26,7,40,' ');
+  uno:restaura();
+  dial(26,2,32,254,40,datos[r].directorio,colorf2(CAMBIARCONFIGURA),
+  TRUE,TRUE,TRUE,TRUE,'\x0');
+  escanea(datos[r].directorio);
+  quitaespaciosfinal(datos[r].directorio);
+  proteccion();
+  if (escape==TRUE || salvarco==TRUE)  goto fini;
+  if (arriba==TRUE) goto cinco;
+  dosa:nombre[0]='\x0';
+  while(nombre[0]=='\x0') {
+	 restaura();
+	 dial(10,3,32,254,8,nombre,colorf2(CAMBIARCONFIGURA),
+	 TRUE,TRUE,TRUE,TRUE,'\x0');
+	 quitaespaciosfinal(nombre);
+	 proteccion();
+	 if (nombre[0]=='\x0') ponerror(18);
+	 };
+  if (escape==TRUE || salvarco==TRUE)  goto fini;
+  if (arriba==TRUE) goto uno;
+  dosb:ext[0]='\x0';
+  while(1==1) {
+	 restaura();
+	 dial(30,3,32,254,3,ext,colorf2(CAMBIARCONFIGURA),
+	 TRUE,TRUE,TRUE,TRUE,'\x0');
+	 quitaespaciosfinal(ext);
+	 proteccion();
+	 if (strcmp(ext,"COM") && strcmp(ext,"EXE") && strcmp(ext,"BAT"))
+		//si no se pone extensi¢n COM , EXE o BAT
+		ponerror(19);
+	 else break;
+	 };
+  sprintf(datos[r].ejecutable,"%s.%s",nombre,ext);
+  if (escape==TRUE || salvarco==TRUE)  goto fini;
+  if (arriba==TRUE) goto dosa;
+  tres:restaura();
+  dial(22,4,32,254,25,datos[r].nombre,colorf2(CAMBIARCONFIGURA),
+  TRUE,TRUE,TRUE,TRUE,'\x0');
+  quitaespaciosfinal(datos[r].nombre);
+  proteccion();
+  if (escape==TRUE || salvarco==TRUE)  goto fini;
+  if (arriba==TRUE) goto dosb;
+  cuatro:restaura();
+  dial(2,6,32,254,77,datos[r].aplicacion,colorf2(CAMBIARCONFIGURA),
+  TRUE,TRUE,TRUE,TRUE,'\x0');
+  quitaespaciosfinal(datos[r].aplicacion);
+  proteccion();
+  if (escape==TRUE || salvarco==TRUE) goto fini;
+  if (arriba==TRUE) goto tres;
+  cinco:restaura();
+  dial(26,7,32,254,40,datos[r].parametros,colorf2(CAMBIARCONFIGURA),
+  TRUE,TRUE,TRUE,TRUE,'\x0');
+  quitaespaciosfinal(datos[r].parametros);
+  proteccion();
+  if (escape==TRUE || salvarco==TRUE)  goto fini;
+  if (arriba==TRUE) goto cuatro;
+  sprintf(nombresearch,"%s\\%s",datos[r].directorio,datos[r].ejecutable);
+  if ((p=searchpath(nombresearch))==NULL) ponerror(20);
+  else {
+	 strcpy(encontrado,p);
+	 fnsplit(encontrado,drive,dir,file,_ext);
+	 sprintf(datos[r].directorio,"%s%s",drive,dir);
+	 sprintf(datos[r].ejecutable,"%s%s",file,_ext);
+	 };
+  fini:++r;
+  strset(nombre,' ');
+  strset(ext,' ');
+  }
+  if (salvarco==TRUE) {
+  borrafich(nombrefichero);
+  if ((fichero=_creat(nombrefichero,FA_ARCH))==-1)  ficheroerror(errno);
+  else {
+	 _write(fichero,clave,longitudclave);
+	 _write(fichero,&r,sizeof(r));
+	 registros=r;
+	 ventanas[4].yy=registros+1;
+	 _write(fichero,&datos,sizeof(datos));
+	 _close(fichero);
+	 };
+};
+if (salvarco==FALSE) memcpy(&datos,conftemp,sizeof(datos));
+cerrarven(24);
+cambiarven(vens);
+__setcursortype(_NOCURSOR);
+atributo=atributo2;
+farfree(conftemp);
+}
+/*-------------------------------------------------------------------------*/

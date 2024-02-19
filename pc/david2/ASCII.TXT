@@ -1,0 +1,59 @@
+			C¢digos ASCII estandard
+ASCII=American Standard Code for Information Interchange
+
+ 000   (nul)   016   (dle)   032 (sp) 048 0   064 @   080 P   096 `   112 p
+ 001   (soh)   017   (dc1)   033 !    049 1   065 A   081 Q   097 a   113 q
+ 002   (stx)   018   (dc2)   034 "    050 2   066 B   082 R   098 b   114 r
+ 003   (etx)   019   (dc3)   035 #    051 3   067 C   083 S   099 c   115 s
+ 004   (eot)   020   (dc4)   036 $    052 4   068 D   084 T   100 d   116 t
+ 005   (enq)   021   (nak)   037 %    053 5   069 E   085 U   101 e   117 u
+ 006   (ack)   022   (syn)   038 &    054 6   070 F   086 V   102 f   118 v
+ 007   (bel)   023   (etb)   039 '    055 7   071 G   087 W   103 g   119 w
+ 008   (bs)    024   (can)   040 (    056 8   072 H   088 X   104 h   120 x
+ 009   (tab)   025   (em)    041 )    057 9   073 I   089 Y   105 i   121 y
+ 010   (lf)    026   (sub)   042 *    058 :   074 J   090 Z   106 j   122 z
+ 011   (vt)    027   (esc)   043 +    059 ;   075 K   091 [   107 k   123 {
+ 012   (np)    028   (fs)    044 ,    060 <   076 L   092 \   108 l   124 |
+ 013   (cr)    029   (gs)    045 -    061 =   077 M   093 ]   109 m   125 }
+ 014   (so)    030   (rs)    046 .    062 >   078 N   094 ^   110 n   126 ~
+ 015   (si)    031   (us)    047 /    063 ?   079 O   095 _   111 o   127(del)
+
+Equivalencia de caracteres de control :
+
+(nul) nulo                              (dle) escape de enlace de datos
+(soh) inicio de encabezado              (dc1) control del dispositivo 1
+(stx) inicio de texto                   (dc2) control del dispositivo 2
+(etx) fin de texto                      (dc3) control del dispositivo 3
+(eot) fin de transmisi¢n                (dc4) control del dispositivo 4
+(enq) indagaci¢n/investigaci¢n          (nak) reconocimiento negativo     
+(ack) reconocimiento                    (syn) inactividad sincr¢nica
+(bel) campana                           (etb) fin de bloque de transmisi¢n
+(bs)  retroceso de espacio              (can) cancelaci¢n
+(tab) tabulador horizontal              (em)  fin del medio
+(lf)  cambio de linea                   (sub) substituto
+(vt)  tabulador vertical                (esc) escape
+(ff)  cambio de forma                   (fs)  separador de archivos
+(cr)  retorno de carro                  (gs)  separador de grupos
+(so)  fijaci¢n de may£sculas            (rs)  separador de registros
+(si)  liberaci¢n de may£sculas          (qs)  separador de unidades
+                                        (sp)  espacio
+                                        (del) supresi¢n
+
+
+                C¢digos ASCII extendidos (c¢digos 128 - 255)
+
+  128 Ä   143 è   158 û   172 ¨   186 ∫   200 »   214 ÷   228 ‰   242 Ú
+  129 Å   144 ê   159 ü   173 ≠   187 ª   201 …   215 ◊   229 Â   243 Û
+  130 Ç   145 ë   160 †   174 Æ   188 º   202     216 ÿ   230 Ê   244 Ù
+  131 É   146 í   161 °   175 Ø   189 Ω   203 À   217 Ÿ   231 Á   245 ı
+  132 Ñ   147 ì   162 ¢   176 ∞   190 æ   204 Ã   218 ⁄   232 Ë   246 ˆ
+  133 Ö   148 î   163 £   177 ±   191 ø   205 Õ   219 €   233 È   247 ˜
+  134 Ü   149 ï   164 §   178 ≤   192 ¿   206 Œ   220 ‹   234 Í   248 ¯
+  135 á   150 ñ   165 •   179 ≥   193 ¡   207 œ   221 ›   235 Î   249 ˘
+  136 à   151 ó   166 ¶   180 ¥   194 ¬   208 –   222 ﬁ   236 Ï   250 ˙
+  137 â   152 ò   167 ß   181 µ   195 √   209 —   223 ﬂ   237 Ì   251 ˚
+  138 ä   153 ô   168 ®   182 ∂   196 ƒ   210 “   224 ‡   238 Ó   252 ¸
+  139 ã   154 ö   169 ©   183 ∑   197 ≈   211 ”   225 ·   239 Ô   253 ˝
+  140 å   155 õ   170 ™   184 ∏   198 ∆   212 ‘   226 ‚   240    254 ˛
+  141 ç   156 ú   171 ´   185 π   199 «   213 ’   227 „   241 Ò   255
+  142 é   157 ù

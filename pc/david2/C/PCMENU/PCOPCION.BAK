@@ -1,0 +1,738 @@
+#include <stdlib.h>
+#include <process.h>
+#include <dir.h>
+#include <io.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <sys\stat.h>
+#include <ctype.h>
+#include <dos.h>
+#include <errno.h>
+#include <pcutil.h>
+#include <pcdisco.h>
+#include <pcescrib.h>
+
+const char *logo2[3]={"PCMENU V 1.1","(c) BIT SOFT","1993,94,95,96"};
+/*-------------------------------------------------------------------------*/
+void nada(void);
+void Salir(void);
+void cambconf(void);
+void logot(void);
+void infod(void);
+/*-------------------------------------------------------------------------*/
+struct meninn menin[]={
+1,"Ficheros",
+11,"Disco",
+18,"Configuraci¢n",
+33,"Especial",
+43,"Aplicaciones",};
+struct Menuin *menuin;
+struct opciontipo opciones[]=  {
+"~C~opiar fichero",nada,"Copia de un directorio a otro o a otra unidad",
+"Copy ~+~",nada,"Distribuye los archivos marcados en discos",
+"C~o~mparar fichero",nada,"Compara byte a byte un/os fichero/s",
+"~R~enombrar fichero",nada,"Cambia el nombre",
+"~B~orrar fichero",nada,"Borra una lista de ficheros",
+"~L~ocalizar ficheros",nada,"A trav‚s de un filtro localiza ficheros",
+"~M~over ficheros",nada,"Traslada un fichero de un lugar a otro",
+"B~u~scar texto",nada,"Localiza una cadena dada en un fichero",
+"~I~mprimir fichero",nada,"Imprime con el formato especificado",
+"~V~erificar fichero",nada,"Mira que el fichero est‚ bien grabado",
+"I~m~primir directorio",nada,"Imprime la lista de ficheros",
+"~U~ndelete",nada,"Recupera ficheros borrados",
+"Lim~p~iar fichero",nada,"Borra ficheros de manera que no se puedan recuperar",
+"Cambiar ~a~tributo",nada,"Cambia los atributos del fichero",
+"V~e~r fichero",nada,"Visualiza fichero",
+"Encrip~t~ar fichero",nada,"Oculta con un codigo secreto un fichero",
+"E~j~ecutar {CTRL-ENTER}",nada,"Ejecuta un programa ejecutable",
+"Ejecutar coma~n~do",nada,"Ejecuta un comando del MS-DOS",
+"~S~alir",Salir,"Sale de Pcmenu",
+"-",nada,"", /* comando de separaci¢n de menu */
+"~I~nformacion disco",infod,"Informa sobre capacidad , libre , etc.",
+"~C~opiar disco",nada,"Duplica disco de formato estandard",
+"C~a~mbiar unidad",cambunidproc,"Cambia unidad activa",
+"~F~ormatear disco",nada,"Prepara un disco para ser utilizado por el MS-DOS",
+"~D~irectorio",pfun_arbol,"Mantenimiento de directorios",
+"~B~uscar cadena",nada,"Busca una cadena dada en todo el disco",
+"~R~enombrar etiqueta",nada,"Cambia el nombre al disco",
+"~V~erificar disco",nada,"Examina un disco sobre posibles sectores erroneos",
+"V~e~r disco",nada,"Visualiza el contenido del disco",
+"-",nada,"", /* comando de separaci¢n de menu */
+"~C~ambiar configuraci¢n",cambconf,"Cambia la configuraci¢n de carga de programas",
+"~H~acer nueva configuraci¢n",nuevconfproc,"Hace una nueva configuraci¢n de carga de programas",
+"-",nada,"",
+"~I~nformaci¢n del sistema",nada,"Visualiza el hardware del ordenador",
+"~M~irar memoria",nada,"Visualiza la memoria",
+"~L~ogotipo",logot,"Muestra el logotipo",
+"-",nada,"",
+"*",nada,"",/*comando de fin de men£s*/
+};
+/*-------------------------------------------------------------------------*/
+void borratemp(void);
+int _compara (const void *,const void *);
+static void near mostrarayuda(int);
+static void near selecciona(int,int);
+static void near abriropcion(int);
+static void near cerraropcion(int);
+static void near sel_fich(void);
+static void near actualiza_ven_seleccionado(void);
+static void near actualiza_fich_sel(unsigned int);
+static int near ejecutapcejec(void);
+static void near down_arbol(void);
+static void near up_arbol(void);
+static void near right_arbol(void);
+static void near left_arbol(void);
+static void near ac_var_fich(void);
+static void near p_c_enter(void);
+static void near ponopcion2(int numo,char *b[]);
+/*-------------------------------------------------------------------------*/
+extern struct filee *ficherosdir;
+/*-------------------------------------------------------------------------*/
+BOOLEAN sif10;
+DATOS datos[MAXSOFT];
+ESTRUCTARB *arbolptr;
+/*-------------------------------------------------------------------------*/
+unsigned int totalfich_sel,_num_fich_sel,ULTIMOMENU,numfich,yrel,xrel,filey;
+unsigned long total_byt_sel,ptr;
+char dirsel[MAXPATH]; /*cadena del directorio seleccionado por fun_arbol si se entra con 1*/
+unsigned char ancho2;
+int cscreen2,cscreenA2,alto2,atrsalva,atritemp,pruebas,menu=1,opcion=1,
+intento,fin=0,j,i,registros,arboly,salmenu,longitudclave;
+char *clave="\x1\x1\x9\x3pc",diractual[MAXPATH],poner[80],*menu2 =
+"~F~icheros  ~D~isco  ~C~onfiguraci¢n  ~E~special  ~A~plicaciones";
+/*cada opcion2 en realidad ocupa 2*/
+char *opciones2[4]= {
+"Movimiento con \x18 \x19 \x1A \x1B    y enter",
+"~F1~ Ayuda ³ ~ESC~ Salir de menus",
+"~F1~ Ayuda  ³ ~F2~ Cambiar unidad ³ ~F3~ Shell al dos  ³ ~F4~ Desseleccionar",
+"~F5~ Copiar ³ ~F10~ Menu ³ ~Alt-S~ Salir",
+};
+/*------------------------------------------------------------------------*/
+static void near tirar_sel_abajo_fich(void)
+{
+if (numfich+1!=totalfich)
+	  {writeatrib(2,filey,ancho-1,colorf2(FICHEROSV));
+		filey++;
+		numfich++;
+		if (filey>alto)
+	  {filey=alto;
+		scrollficherosarriba();
+	  }
+	};
+  sel_fich();
+}
+/*-------------------------------------------------------------------------*/
+static void near tirar_sel_arriba_fich(void)
+{
+if (numfich>0) {
+  if (filey==3) scrollficherosabajo();
+  writeatrib(2,(filey==3) ? (filey+1) : (filey),ancho-1,colorf2(FICHEROSV));
+  if (filey>3) filey--;
+  ptr--;
+  numfich--;
+  sel_fich();
+  }
+}
+/*------------------------------------------------------------------------*/
+void dessel_ficheros(void) {
+register cont;
+unsigned int _filey=filey,_numfich=numfich;
+
+for (cont=0;cont<totalfich;cont++) ficherosdir[cont].num_fich_sel=0;
+ac_var_fich();
+filey=_filey;
+numfich=_numfich;
+sel_fich();
+actualiza_ven_seleccionado();
+mostrar_ficheros((numfich-filey)+3);
+}
+/*-------------------------------------------------------------------------*/
+void infod(void) {
+poninfodisco(unidactual);
+}
+/*-------------------------------------------------------------------------*/
+void logot(void)  {
+register i,at=atributo;
+
+hacerven(23,colorf(LOGOTIPO));
+atributo=colorf(LOGOTIPO);
+for (i=0;i<3;i++)
+  centrar((i+1)*2,0,(char *)logo2[i]);
+centrar(alto,0,"PULSE TECLA");
+tecla();
+borra_tec_buffer();
+cerrarven(23);
+atributo=at;
+}
+/*-------------------------------------------------------------------------*/
+void nada(void) {
+  atributo=atributo; }
+/*-------------------------------------------------------------------------*/
+void Salir(void) {
+  salmenu=1;}
+
+/*-------------------------------------------------------------------------*/
+void cambconf(void)  {
+
+  salmenu=salmenu;
+  }
+/*-------------------------------------------------------------------------*/
+static void near mostrarayuda(int numerogeneral)  {
+register _vents=VENTANASEL,a=atributo;
+
+  cambiarven(15);
+  atributo=colorf2(LOGOTI);
+  fillwin(' ');
+  if (menu==ULTIMOMENU)  centrar(1,0,datos[numerogeneral].aplicacion);
+  else centrar(1,0,opciones[numerogeneral].instruccion);
+  atributo=a;
+  cambiarven(_vents);
+  }
+
+/*-------------------------------------------------------------------------*/
+static void near selecciona(int numero,int numen)  {
+register j,i;
+char *caractermismo="~";
+char *longg;
+
+j=menuin[numen].inicio+numero;
+atributo=colorf2(OPSEL);
+if (numen==ULTIMOMENU)  {
+  strcpy(poner,datos[numero].nombre);
+  i=opcion-1;  }
+else  {strcpy(poner,opciones[j].utilidad);
+		 longg=strpbrk(poner,caractermismo);
+		 strcpy(longg,longg+1);
+		i=menuin[menu].inicio+opcion;}
+writestr(2,numero+2,1,poner);
+mostrarayuda(i);
+}
+/*-------------------------------------------------------------------------*/
+static void near sel_fich(void) {
+register _at=atributo,_ve=VENTANASEL;
+
+cambiarven(8);
+atributo=colorf2(FICHSEL);
+if (totalfich) escribefichero(filey,&ficherosdir[numfich]);
+atributo=_at;
+cambiarven(_ve);
+}
+/*-------------------------------------------------------------------------*/
+static void near actualiza_fich_sel(unsigned int fichrel) {
+unsigned int cont;
+for (cont=0;cont<totalfich-1;cont++)
+  if (ficherosdir[cont].num_fich_sel>fichrel)
+	 ficherosdir[cont].num_fich_sel--;
+}
+/*-------------------------------------------------------------------------*/
+static int near ejecutapcejec(void) {
+char drive[MAXDRIVE],dir[MAXDIR],file[MAXFILE],ext[MAXEXT],
+nombreejec[MAXDRIVE+MAXDIR+MAXFILE+MAXEXT];
+
+fnsplit(_argv[0],drive,dir,file,ext);
+fnmerge(nombreejec,drive,dir,"PCEJEC",".COM");
+return (spawnl(P_OVERLAY,nombreejec,_argv[0],NULL));
+}
+/*-------------------------------------------------------------------------*/
+void escribedirectorio(char *_dir) {
+register ven=VENTANASEL,atr=atributo;
+
+cambiarven(20);
+atributo=colorf2(ARBOLV);
+fillwin(' ');
+centrar(1,0,_dir);
+cambiarven(ven);
+atributo=atr;
+}
+/*-------------------------------------------------------------------------*/
+static void near _cambiadir(void) {
+farfree(ficherosdir);
+cogerdiractual(diractual,MAXPATH);
+mostrardirectorio(unidactual);
+escribedirectorio(diractual);
+}
+/*-------------------------------------------------------------------------*/
+static void near down_arbol(void) { // desplaza abajo arbol directorios
+//arboly=alto-2;
+yrel+=arbolptr->y-arbolptr->antdir->y;
+arboly=arbolptr->y-yrel;
+ponerarbol(yrel,arbol);
+};
+/*-------------------------------------------------------------------------*/
+static void near up_arbol(void) { // desplaza abajo arbol directorios
+yrel-=arbolptr->proxdir->y-arbolptr->y;
+arboly=arbolptr->y-yrel;
+ponerarbol(yrel,arbol);
+};
+/*-------------------------------------------------------------------------*/
+static void near right_arbol(void) { // desplaza derecha arbol directorios
+yrel=arbolptr->y-arbolptr->dirsup->y;
+arboly=arbolptr->y-yrel;
+ponerarbol(yrel,arbol);
+};
+/*-------------------------------------------------------------------------*/
+static void near left_arbol(void) { // desplaza izquierda arbol directorios
+yrel=arbolptr->y;
+arboly=0;
+ponerarbol(yrel,arbol);
+};
+/*-------------------------------------------------------------------------*/
+static void near ac_var_fich(void) {
+_num_fich_sel=0;
+totalfich_sel=0;
+total_byt_sel=0;
+filey=3;
+numfich=0;
+}
+/*-------------------------------------------------------------------------*/
+void sel_dir(int _atributo) {
+writeatrib(arbolptr->x+1,(arbolptr->y-yrel)+2,strlen(arbolptr->nombredir),
+_atributo);
+};
+/*-------------------------------------------------------------------------*/
+void preparanuevoarbol() {
+sel_dir(colorf2(DIRSEL));
+cambiarven(8);
+ac_var_fich();
+actualiza_ven_seleccionado();
+seleccionaventana(8,colorf2(VENTSEL));
+arboly=0;
+}
+/*-------------------------------------------------------------------------*/
+void seleccionaopcion(void)  {
+int ventt,ventsa,teclalee,tempf;
+unsigned int var1;
+
+ptr=0;
+salmenu=0;
+cambiadir("\\");
+arbolptr=arbol;
+yrel=arbolptr->y;
+xrel=arbolptr->x;
+cambiarven(6);
+sel_dir(colorf2(DIRSEL));
+cambiarven(8);
+ac_var_fich();
+actualiza_ven_seleccionado();
+seleccionaventana(8,colorf2(VENTSEL));
+sif10=FALSE;
+menu=0;
+opcion=0;
+numfich=0;
+sel_fich();
+ponopcion2(1,opciones2);
+  do {
+	 teclalee=tecla();
+	 if (sif10==TRUE)  {
+	 switch(teclalee)  {
+		 case UP:var1=atributo;
+		 atributo=colorf2(LOGOTI);
+		 if (!opcion)  
+		 if (menu!=ULTIMOMENU) {
+			 j=menuin[menu].inicio+opcion;
+			 writestr(2,2,1,opciones[j].utilidad);
+			 opcion=menuin[menu].fin-menuin[menu].inicio;}
+		  else {
+			 writestr(2,2,1,datos[0].nombre);
+			 opcion=registros-2;
+			 j=opcion;
+			 }
+			else  
+			if (menu!=ULTIMOMENU)  {
+			  j=menuin[menu].inicio+opcion;
+			  writestr(2,opcion+2,1,opciones[j].utilidad);
+			  --opcion;
+			  }
+			else {
+			  j=opcion;
+			  writestr(2,opcion+2,1,datos[j].nombre);
+			  --opcion;
+			  };
+			atributo=var1;
+			  break;
+		 case DOWN:
+		 var1=atributo;
+		 atributo=colorf2(LOGOTI);
+		 if (opcion==registros-2 && menu==ULTIMOMENU)  {
+			 writestr(2,registros,1,datos[registros-2].nombre);
+			 opcion=0;
+			 j=opcion;}
+		 else  if (opcion!=registros-2 && menu==ULTIMOMENU)  {
+			 writestr(2,opcion+1,1,datos[j].nombre);
+			 ++opcion;
+        j=opcion;
+		  }
+	  if (opcion==(menuin[menu].fin-menuin[menu].inicio) && 
+	  menu!=ULTIMOMENU)  
+	  {j=menuin[menu].inicio+opcion;
+		 writestr(2,alto,1,opciones[j].utilidad);
+		 opcion=0;  }
+		  else if (menu!=ULTIMOMENU)  {
+		  j=menuin[menu].inicio+opcion;
+		  writestr(2,opcion+2,1,opciones[j].utilidad);
+		  ++opcion; };
+		 atributo=var1;
+		 break;
+	  case ESC:sif10=FALSE;
+				  cerraropcion(menu);
+				  ponopcion2(1,opciones2);
+				  tempf=atributo;
+				  cambiarven(15);
+				  atributo=colorf2(FICHEROSV);
+				  fillwin(' ');
+				  atributo=tempf;
+				  cambiarven(ventsa);
+				  break;
+	  case RIGHT:cerraropcion(menu);
+			if (menu==ULTIMOMENU)
+			menu=0;
+			  else
+			++menu;
+		abriropcion(menu);
+		if (menu!=ULTIMOMENU)  
+		  if (opcion>menuin[menu].fin-menuin[menu].inicio && menu==ULTIMOMENU) 
+		  opcion=0;
+		else if (opcion>registros-2) opcion=0;
+		opcion=1;
+		selecciona(opcion,menu);
+		break;
+	  case LEFT:cerraropcion(menu);
+			 if (menu==0)
+		  menu=ULTIMOMENU;
+		    else
+		  --menu;
+	       abriropcion(menu);
+			 opcion=0;
+			 selecciona(opcion,menu);
+			 if (menu==ULTIMOMENU) j=0;
+			 break;
+		case ENTER:
+		ventt=VENTANASEL;
+		if (menu!=ULTIMOMENU)  {
+		cerraropcion(menu);
+		i=menuin[menu].inicio+opcion;
+		opciones[i].salida();
+		abriropcion(menu);
+		if (salmenu==1)  fin=1;  }
+		else  {
+		borratemp();
+		if ((tempf=_creat(nombretemp,FA_HIDDEN))==-1) ficheroerror(errno);
+		else {
+		  _write(tempf,&datos[opcion].directorio,40);
+		  _write(tempf,&datos[opcion].ejecutable,13);
+		  _write(tempf,&datos[opcion].parametros,40);
+		  _close(tempf);
+		  /*_chmod(nombretemp,1,FA_HIDDEN);*/
+		  pruebas=ejecutapcejec();
+		  borratemp();
+		  if (pruebas==-1) ponerror(11);}
+		  }
+		cambiarven(ventt);
+		break;
+		 }
+	 if (teclalee!=ESC) selecciona(opcion,menu);
+	 }
+	 if (sif10==FALSE)
+		switch(teclalee)
+		 {
+		case A_S:fin=1;
+			break;
+		case C_ENTER:if ((strstr(ficherosdir[numfich].nombre,".COM")!=NULL) ||
+						 (strstr(ficherosdir[numfich].nombre,".EXE")!=NULL) ||
+						 (strstr(ficherosdir[numfich].nombre,".BAT")!=NULL))
+						 p_c_enter(); else ponerror(19);
+		case F3:if ((ejecutacomando(getenv("COMSPEC"),0))==-1) ponerror(2);
+				  break;
+		case F2:cambunidproc();
+				  break;
+		case F4:if (totalfich) dessel_ficheros();
+				  break;
+		case F5:nada();
+				  break;
+		case F10:sif10=TRUE;
+					ventsa=VENTANASEL;
+					abriropcion(menu);
+					selecciona(opcion,menu);
+					ponopcion2(0,opciones2);
+					break;
+		case A_U:sif10=TRUE;
+					menu=1;
+					opcion=1;
+					abriropcion(menu);
+					selecciona(opcion,menu);
+					ponopcion2(0,opciones2);
+					break;
+		case A_C:sif10=TRUE;
+					menu=2;
+					opcion=1;
+					abriropcion(menu);
+					selecciona(opcion,menu);
+					ponopcion2(0,opciones2);
+					break;
+		case A_P:sif10=TRUE;
+					menu=3;
+					opcion=1;
+					abriropcion(menu);
+					selecciona(opcion,menu);
+					ponopcion2(0,opciones2);
+					break;
+		case DOWN:if (VENTANASEL==8 && totalfich) tirar_sel_abajo_fich();
+					 if (VENTANASEL==6 && arbolptr->proxdir) {
+						sel_dir(colorf2(ARBOLV));
+						arbolptr=arbolptr->proxdir;
+						arboly+=(arbolptr->y-arbolptr->antdir->y);
+						if (arboly>alto-2) down_arbol(); // desplazar abajo arbol directorios
+						sel_dir(colorf2(DIRSEL));
+						cambiadir("..");
+						cambiadir(arbolptr->nombredir);
+						_cambiadir();
+						ac_var_fich();
+						sel_fich();
+						actualiza_ven_seleccionado();};
+						break;
+		case UP:if (VENTANASEL==8 && totalfich)tirar_sel_arriba_fich();
+				  if (VENTANASEL==6 && arbolptr->antdir) {
+					 sel_dir(colorf2(ARBOLV));
+					 arbolptr=arbolptr->antdir;
+					 arboly-=(arbolptr->proxdir->y-arbolptr->y);
+					 if (arboly<0) up_arbol(); // desplaza arriba arbol directorios
+					 sel_dir(colorf2(DIRSEL));
+					 cambiadir("..");
+					 cambiadir(arbolptr->nombredir);
+					 _cambiadir();
+					 ac_var_fich();
+					 sel_fich();
+					 actualiza_ven_seleccionado();};
+					 break;
+		case RIGHT:if (VENTANASEL==6 && arbolptr->subdir) {
+						sel_dir(colorf2(ARBOLV));
+						arboly+=(arbolptr->subdir->y-arbolptr->y);
+						arbolptr=arbolptr->subdir;
+						if (arboly>alto-2) right_arbol();
+						sel_dir(colorf2(DIRSEL));
+						cambiadir(arbolptr->nombredir);
+						_cambiadir();
+						ac_var_fich();
+						sel_fich();
+						actualiza_ven_seleccionado();};
+						break;
+		case LEFT:if (VENTANASEL==6 && arbolptr->dirsup) {
+						sel_dir(colorf2(ARBOLV));
+                  arboly-=(arbolptr->y-arbolptr->dirsup->y);
+						arbolptr=arbolptr->dirsup;
+						if (arboly<0) left_arbol();
+						sel_dir(colorf2(DIRSEL));
+						cambiadir("..");
+						_cambiadir();
+						ac_var_fich();
+						sel_fich();
+						actualiza_ven_seleccionado();};
+						break;
+		case PGDN:if (VENTANASEL==8 && totalfich) {
+						 numfich+=alto-2;
+						 if (numfich>totalfich) {
+							numfich=totalfich-1;
+							filey=alto;
+							};
+						 mostrar_ficheros(numfich-(filey)-1);
+						 };
+						 sel_fich();
+						 break;
+		case PGUP:if (VENTANASEL==8 && totalfich) {
+					  if (totalfich<alto) {
+						 numfich=0;
+						 filey=3;
+						 }
+					  else 
+					  if (numfich<alto-2) {
+						 numfich=0;
+						 filey=3;}
+					  else
+						 numfich-=(alto-2);
+					  mostrar_ficheros(numfich-(filey-3));
+						 };
+					  sel_fich();
+					  break;
+		case END:if (VENTANASEL==8 && totalfich) {
+						 numfich=totalfich-1;
+						 if (totalfich<alto) filey=(unsigned char)totalfich+3;
+						 else filey=alto;
+						 mostrar_ficheros(numfich-(filey-3));
+						 };
+						 sel_fich();
+						 break;
+		case HOME:if (VENTANASEL==8 && totalfich) {
+						 numfich=0;
+						 filey=3;
+						 mostrar_ficheros(numfich-(filey-3));
+						 };
+						 sel_fich();
+						 break;
+		case TAB:if (VENTANASEL==8) {
+					 seleccionaventana(8,colorf2(MARCO));
+					 seleccionaventana(6,colorf2(VENTSEL));
+					 } else {
+					 seleccionaventana(6,colorf2(MARCO));
+					 seleccionaventana(8,colorf2(VENTSEL));
+					 };
+					 break;
+		case ENTER:if (VENTANASEL==8 && totalfich) {
+						 if (ficherosdir[numfich].num_fich_sel) {
+							total_byt_sel-=ficherosdir[numfich].longitud;
+							totalfich_sel--;
+							--_num_fich_sel;
+							ficherosdir[numfich].num_fich_sel=0;
+							actualiza_fich_sel(_num_fich_sel);}
+							else {
+							total_byt_sel+=ficherosdir[numfich].longitud;
+							totalfich_sel++;
+							++_num_fich_sel;
+							ficherosdir[numfich].num_fich_sel=_num_fich_sel;
+							}
+						 actualiza_ven_seleccionado();
+						 mostrar_ficheros((numfich-filey)+3);
+						 tirar_sel_abajo_fich();
+						 };
+					  break;
+		 }
+	 }while (!fin);
+
+}
+/*-------------------------------------------------------------------------*/
+static void near abriropcion(int numerop) {
+
+register i,l,j1;
+
+cambiarven(21);
+atributo=15;
+writestr(menin[numerop].empieza,1,1,menin[numerop].menu);
+hacerven(numerop,colorf2(LOGOTI));
+atributo=colorf2(LOGOTI);
+j1=0;
+if (menu!=ULTIMOMENU)  {
+  for (i=(menuin[numerop].inicio);i<=(menuin[numerop].fin);i++) {
+	 l=2+j1;
+	 writestr(2,l,1,opciones[i].utilidad);
+	 j1++;}
+  }
+else
+  for (i=0;i<registros;i++)  {
+	 l=2+j1;
+	 writestr(2,l,1,datos[i].nombre);
+	 ++j1;  };
+}
+/*-------------------------------------------------------------------------*/
+static void near cerraropcion(int numerop) {
+
+cerrarven(numerop);
+cambiarven(21);
+atributo=colorf2(LOGOTI);
+writestr(1,1,1,menu2);
+}
+/*---------------------------------------------------------------------*/
+void compruebaconfiguracion(void)  {
+char compclave[7];
+int fdatos;
+
+  if (((fdatos=_open(nombrefichero,O_RDONLY))==-1))  {
+	 ponerror(15);
+	 nuevconfproc();}
+	 else {
+		  _read(fdatos,compclave,longitudclave);
+		  pruebas=memcmp(compclave,clave,longitudclave);
+		  if (pruebas==0)  {
+		  _read(fdatos,&registros,sizeof(registros));
+		  ventanas[4].yy=registros+1;
+		  _read(fdatos,&datos,sizeof(datos));
+		  _close(fdatos);
+		  }
+		else {
+		ponerror(9);
+		_close(fdatos);
+		nuevconfproc();
+		}
+  }
+}
+/*-------------------------------------------------------------------------*/
+
+static void near ponopcion2(int numo,char *b[]) {
+register vents=VENTANASEL,at=atributo;
+
+cambiarven(14);
+atributo=colorf2(MENUTECLAS);
+fillwin(' ');
+writestr(1,1,1,b[2*numo]);
+writestr(1,2,1,b[2*numo+1]);
+atributo=at;
+cambiarven(vents);
+}
+/*--------------------------------------------------------------------*/
+static void near actualiza_ven_seleccionado(void) {
+register _ve=VENTANASEL,_at=atributo;
+char buf_sel[80];
+
+cambiarven(19);
+atributo=colorf2(FICHEROSV);
+fillwin(' ');
+sprintf(buf_sel,"%u ficheros seleccionados , %lu bytes seleccionados",
+totalfich_sel,total_byt_sel);
+centrar(1,0,buf_sel);
+sprintf(buf_sel,"%u ficheros en total , %lu bytes en total",totalfich,
+sumatotalfich);
+centrar(2,0,buf_sel);
+cambiarven(_ve);
+atributo=_at;
+}
+/*--------------------------------------------------------------------*/
+void pcopcion_init(void) {
+unsigned int contador;
+
+if ((menuin=(struct Menuin *)farmalloc(farcoreleft()-16L))==NULL)
+  ponerror(1);
+menuin[0].inicio=0;
+for (contador=0,ULTIMOMENU=65535U;opciones[contador].utilidad!="*";
+  contador++) {
+  if (opciones[contador].utilidad=="-")  {
+	 ++ULTIMOMENU;
+	 menuin[ULTIMOMENU].fin=contador-1;
+	 menuin[ULTIMOMENU+1].inicio=contador+1;
+	 continue;
+	 };
+  };
+++ULTIMOMENU;
+if ((menuin=(struct Menuin *)_realloc(menuin,
+	(ULTIMOMENU+2)*sizeof(struct Menuin)))==NULL) ponerror(1);
+for (contador=0;contador<ULTIMOMENU;contador++)
+	ventanas[contador].yy=((menuin[contador].fin-menuin[contador].inicio)+1)+
+	ventanas[contador].y;
+ventana(1,1,80,25);
+__setcursortype(_NOCURSOR);
+atributo=colorf(COLORFONDO2);
+fillwin('²');
+atributo=colorf2(LOGOTI);
+writechar (1,1,ancho,' ');
+writestr(1,1,1,menu2);
+ponopcion2(1,opciones2);
+hacerven(19,colorf2(FICHEROSV));
+hacerven(20,colorf2(ARBOLV));
+anchoarbol=(ventanas[6].xx-ventanas[6].x)+1;
+};
+/*--------------------------------------------------------------------*/
+static void near p_c_enter(void) {
+int vents=VENTANASEL,at=atributo;
+char paramet[MAXPATH];
+char programa[13+MAXPATH];
+
+hacerven(25,colorf2(P_P));
+atributo=colorf2(P_P);
+dial(2,2,32,255,74,paramet,colorf2(P_P),TRUE,FALSE,FALSE,FALSE,'\x0');
+escape=FALSE;
+cerrarven(25);
+if (escape==FALSE) {
+  sprintf(programa,"%s %s",ficherosdir[numfich].nombre,paramet);
+  if ((ejecutacomando(programa,1))==-1) ponerror(21);
+  };
+cambiarven(vents);
+atributo=at;
+}

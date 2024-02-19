@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <conio.h>
+#include <string.h>
+
+char fichero[70],abierto;
+unsigned int cant_regis;
+struct DT {
+char nombre[31];
+char grupo[5];
+char turno;
+unsigned long boleta;
+struct {
+  char materia[31];
+  float calificacion[3];
+   }MC [5];
+  }DATOS[100];
+
+int abrir(char * fichero0) {
+//fichero0:fichero a abrir
+//si devuelve -1 no existe fichero
+//si devuelve 1 no se puede abrir fichero
+FILE *controlador;
+struct ffblk dta;
+
+if (findfirst(fichero0,&dta)) return -1;
+if ((controlador=fopen(fichero0,"rb"))==NULL) return 1;
+fscanf(controlador,"%c",&cant_regis);
+fread(controlador,cant_regis,sizeof(struct DT),DATOS);
+fclose(controlador);
+strcpy(fichero,fichero0);
+return 0;
+}
+
+main(){
+unsigned int opcion;
+
+do{
+textbackground(BLUE);
+textcolor(YELLOW);
+clrscr();
+gotoxy(37,5);cprintf("MENU");
+gotoxy(33,7);cprintf("1.-ABRIR");
+gotoxy(33,8);cprintf("2.-CREAR");
+gotoxy(33,9);cprintf("3.-A¥ADIR");
+gotoxy(33,10);cprintf("4.-MODIFICAR");
+gotoxy(33,11);cprintf("5.-BORRAR");
+gotoxy(33,12);cprintf("6.-LISTAR");
+gotoxy(33,13);cprintf("7.-SALIR");
+gotoxy(1,24);cprintf("Fichero:%s\r\nN.Registros:%u",(!abierto) ? "(Ninguno)" :
+ fichero,cant_regis);
+gotoxy(27,15);cprintf("ELIGE TU OPCION:");
+scanf("%u",&opcion);
+}while (opcion!=7);
+}

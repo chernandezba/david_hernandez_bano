@@ -1,0 +1,136 @@
+#include <string.h>
+#include <stdio.h>
+#include <dos.h>
+#include <pcutil.h>
+#include <pcdisco.h>
+
+
+extern unsigned int yrel,xrel;
+void preparanuevoarbol();
+/*--------------------------------------------------------------------*/
+void cambunidproc(void){
+char buf_unid[80];
+unsigned char _x,_xrel,xsal,anc,anc2;
+int teclapul,_atrib=atributo;
+
+teclapul=0;
+hacerven(12,colorf2(CAMBUNIDA));
+atributo=colorf2(CAMBUNIDA);
+sprintf(buf_unid,"UNIDADES:%s",unidlogicas);
+centrar(2,0,buf_unid);
+anc=((ancho-strlen(buf_unid)+1) /2);
+anc2=strlen("UNIDADES:");
+xsal=anc+anc2;//posici¢n dentro de la ventana de la primera letra de la unidad
+_x=xsal+(strchr(unidlogicas+'A')-&unidlogicas); //posici¢n de la letra de la unidad actual
+_xrel=_x-xsal;
+writeatrib(_x,2,1,colorf2(SELUNI));
+teclapul=0;
+while (teclapul!=ENTER && teclapul!=ESC) {
+  teclapul=tecla();
+  if (bufteclado==0x4D00) //flecha derecha del teclado num‚rico
+	 {
+	  writeatrib(_x,2,1,colorf2(CAMBUNIDA));
+	  if (_xrel!=totalunidades) {
+	  _x++;
+	  _xrel++;
+	  }
+	  else {
+	  _x=xsal;
+	  _xrel=0;	  };
+	};
+  if (bufteclado==0X4B00)  //fecha izquierda del teclado num‚rico
+	  {
+	  writeatrib(_x,2,1,colorf2(CAMBUNIDA));
+	  if (_xrel) {
+		 _x--;
+		 _xrel--;}
+		 else {
+		_x=xsal;
+		_xrel=0;
+		};
+	  };
+  writeatrib(_x,2,1,colorf2(SELUNI));
+  }
+cerrarven(12);
+atributo=_atrib;
+if (teclapul!=ESC) {
+	unidactual=unidlogicas[_xrel]-'A';
+	liberamem();
+	cambiadisco(unidactual);
+	cambiadir("\\");
+	strcpy(diractual,"\\");
+	buscararbol(unidactual);
+	arbolptr=arbol;
+	hacerven(6,colorf2(ARBOLV));
+	ponerarbol(0,arbol);
+	poner_etiqueta_disco();
+	mostrardirectorio(unidactual);
+	escribedirectorio(diractual);
+	yrel=arbolptr->y;
+	cambiarven(6);
+	preparanuevoarbol();
+	}
+};
+
+/*-------------------------------------------------------------------------*/
+void poninfodisco(int uni) {
+char info[80];
+struct dfree libred;
+unsigned long libredi,capacidad;
+struct sector0 capacid;
+int atrisal=atributo,_v=VENTANASEL;
+
+hacerven(16,colorf2(INFODISCO));
+atributo=colorf2(INFODISCO);
+centrar(2,0,"LEYENDO INFORMACION");
+getdfree(uni+1,&libred);
+cogerinfodisco(&capacid,uni);
+cerrarven(16);
+hacerven(13,colorf2(INFODISCO));
+centrar(2,0,"ESPACIO LIBRE");
+libredi =  (unsigned long) libred.df_avail *(unsigned long) libred.df_bsec *
+(unsigned long) libred.df_sclus;
+sprintf(info,"%lu",libredi);
+centrar(3,0,info);
+centrar(4,0,"CAPACIDAD DISCO");
+capacidad=((unsigned long)(((capacid.totalsec) ? 
+(unsigned long)capacid.totalsec : capacid.grantotalsectores)-((unsigned long)
+capacid.sectorfat*(unsigned long)capacid.copiasfat)-(unsigned long)
+capacid.sectoresespreserv-(unsigned long)capacid.secreservcomie))*
+(unsigned long)capacid.bytsector)-((unsigned long)capacid.entradasdirprin*
+32));
+if (capacidad > 5l*1024l*1024l) //si es un disco de mas de 5 Mb
+  //imprimir su capacidad en MB
+  sprintf(info,"%u MB",(unsigned int)((capacidad >> 10)>> 10); // >> 10 =/1024
+  //si no imprimirla en Kb
+  else sprintf(info,"%u KB",(unsigned int)(capacidad >> 10));
+centrar(5,0,info);
+centrar(6,0,"BYTES POR CLUSTER");
+sprintf(info,"%u",(unsigned int)capacid.sectcluster*(unsigned int)
+capacid.bytsector);
+centrar(7,0,info);
+centrar(8,0,"SECTORES POR PISTA");
+sprintf(info,"%u",(unsigned int)capacid.sectorpista);
+centrar(9,0,info);
+centrar(10,0,"NUMERO DE CARAS");
+sprintf(info,"%u",(unsigned int)capacid.numcaras);
+centrar(11,0,info);
+centrar(12,0,"TIPO FAT");
+sprintf(info,"%uBIT",capacid.bitsfat);
+centrar(13,0,info);
+centrar(14,0,"SISTEMA DISCO");
+centrar(15,0,capacid.msdos);
+centrar(18,0,"PULSE TECLA");
+tecla();
+atributo=atrisal;
+cerrarven(13);
+}
+/*------------------------------------------------------------------------*/
+void pfun_arbol(void) {
+hacerven(17,colorf2(ARBOLV));
+ponerarbol(0,arbol);
+tecla();
+borra_tec_buffer();
+cerrarven(17);
+}
+/*------------------------------------------------------------------------*/

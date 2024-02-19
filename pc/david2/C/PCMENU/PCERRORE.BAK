@@ -1,0 +1,139 @@
+#include <dos.h>
+#include <stdio.h>
+#include <ctype.h>
+#include <conio.h>
+#include <pcutil.h>
+
+/*------------------------------------------------------------------------*/
+#define IGNORAR  0
+#define REPETIR   1
+#define ABORTAR   2
+/*------------------------------------------------------------------------*/
+BOOLEAN error_critico;
+int atrisave;
+static char msg2[80];
+static char bufferpantalla[512];
+const static char *err_msg[] = {
+	 "protecci¢n contra escritura",
+	 "unidad desconocida",
+	 "disco no preparado",
+	 "comando desconocido",
+	 "error datos(CRC)",
+	 "longitud de escritura de llamada err¢nea",
+	 "error de b£squeda",
+	 "tipo desconocido de medio",
+	 "sector no encontrado",
+	 "falta papel en impresora",
+	 "fallo en escritura",
+	 "fallo en lectura",
+	 "fallo general",
+	 "reservado",
+	 "reservado",
+	 "cambio inv lido de disco"
+};
+/*------------------------------------------------------------------------*/
+extern int VENTANASEL,ULTIMAVENTANASEL;
+/*------------------------------------------------------------------------*/
+static void near hacerven2(void);
+static void near cerrarven2(void);
+/*------------------------------------------------------------------------*/
+int error_win(char *msg)
+{
+int retval;
+
+
+writestr(2,2,0,msg);
+if (!error_critico) writestr(2,3,1,"~A~bortar, ~R~epetir, ~I~gnorar: ");
+//esperar tecla y mirar si se pulsa Abortar,Reintentar o Ignorar
+while(1) {
+  retval= toupper(tecla());
+  if (retval == 'A') {
+	 retval = ABORTAR;
+	 break;
+	 }
+  if (retval =='R') {
+	 retval = REPETIR;
+	 break;
+	 }
+  if (retval == 'I') {
+	 retval = IGNORAR;
+	 break;
+	 }
+  }
+cerrarven2();
+atributo=atrisave;
+return(retval);
+}
+/*----------------------------------------------------------------------*/
+
+/*
+para que el compilador no ponga el mensaje de que los par metros no se usan
+se pone pragma warn -par ,
+*/
+#pragma warn -par
+
+int handler(int errval,int ax,int bp,int si)
+{
+   
+unsigned di;
+
+
+di= _DI;
+atrisave=atributo;
+hacerven2();
+error_critico=FALSE;
+if (ax < 0)
+  //si no es un error de un disco
+  {
+  error_win("Error en dispositivo");
+  error_critico=TRUE;
+  cerrarven2();
+  atributo=atrisave;
+  //abortar el programa
+  hardretn(ABORTAR);
+	}
+//si ha sido un error de disco
+sprintf(msg2, "Error: %s en unidad %c",err_msg[di & 0x00FF], 'A' + 
+(ax & 0x00FF));
+//retornar al programa via interrupci¢n 0x23 con abortar,reintentar o
+//ignorar seg£n lo que haya especificado el usuario
+hardresume(error_win(msg2));
+cerrarven2();
+atributo=atrisave;
+return ABORTAR;
+}
+#pragma warn +par
+/*----------------------------------------------------------------------*/
+void errorespon(void)  {
+  harderr(handler); 
+  }
+/*----------------------------------------------------------------------*/
+static void near hacerven2(void) {
+int atritemp,_xx,_yy;
+
+ventana(ventanas[10].x,ventanas[10].y,ventanas[10].xx,ventanas[10].yy);
+_xx=ventanas[10].xx+3;
+_yy=ventanas[10].yy+2;
+gettext(ventanas[10].x,ventanas[10].y,_xx,_yy,bufferpantalla);
+hacerfondo(colorf2(PCERRORE));
+hacermarco(colorf2(MARCO));
+hacersombra(colorf2(MARCO));
+ultimoatributo=atributo;
+atritemp=atributo;
+atributo=colorf2(TITULO);
+if (ventanas[10].titulo[0]!='\x0')
+	 centrar(1,0,ventanas[10].titulo);
+atributo=atritemp;
+ULTIMAVENTANASEL=VENTANASEL;
+VENTANASEL=10;
+}
+/*----------------------------------------------------------------------*/
+static void near cerrarven2(void) {
+int _xx,_yy;
+
+_xx=ventanas[10].xx+3;
+_yy=ventanas[10].yy+2;
+puttext(ventanas[10].x,ventanas[10].y,_xx,_yy,bufferpantalla);
+cambiarven(ULTIMAVENTANASEL);
+atributo=ultimoatributo;
+}
