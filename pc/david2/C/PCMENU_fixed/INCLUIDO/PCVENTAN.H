@@ -38,6 +38,11 @@ A_2=0X7900,A_3=0X7A00,A_4=0X7B00,A_5=0X7C00,A_6=0X7D00,A_7=0X7E00,
 A_8=0X7F00,A_9=0X8000,A_0=0X8100,A_HYPHEN=0X8200,A_EQUAL=0X8300,
 C_PG_UP=0X8400};
 
+static int cscreenA,cscreen;
+static int cscreenA2,cscreen2;
+static unsigned char ancho2;
+extern int alto2,atrsalva;
+static unsigned char ancho,alto,atributo;
 
 
 //estructuras

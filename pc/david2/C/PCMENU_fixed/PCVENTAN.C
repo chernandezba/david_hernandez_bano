@@ -49,7 +49,7 @@ static unsigned char oldmodo,actmodo,atr2,wx,wy,wx1,wy1,ultimoatributo;
 static unsigned int sipon;
 static int cscreenA,cscreen;
 static int cscreenA2,cscreen2;
-static unsigned char ancho2,alto2,atrsalva;
+static unsigned char ancho2; //,alto2,atrsalva;
 static unsigned char ancho,alto,atributo;
 static struct ventann *VENTANASEL; /*ventana actual seleccionada*/
 static struct ventann *ULTIMAVENTANASEL; /* ultima ventana hecha con hacerven*/
@@ -101,6 +101,26 @@ return atributo;
 }
 /*-------------------------------------------------------------------------*/
 void fillwin(unsigned char ch3) {
+int x,y;
+char buffer[2];
+
+//TODO: esta funcion fillwin tiene algun error
+//y se cuelga si se ejecuta el asm tal cual
+//llamando a writestr tambien falla
+int maxx;
+
+return;
+maxx=ancho;
+if (maxx>40) maxx=40;
+
+for (x=1;x<maxx;x++) {
+for (y=1;y<20;y++) {
+buffer[0]=ch3;
+buffer[1]=0;
+writestr(x,y,0,buffer);
+}
+}
+return; //temporal
 asm {
 	push	dx
 	push	cx
@@ -570,6 +590,7 @@ if (pventana->guarda==siguarda) {
   getventan(pventana->x,pventana->y,_xx,_yy,pventana->memptr);
   };
 hacerfondo(colorfff);
+
 if (flags) hacermarco(_colorf2[_MARCO][adaptador]);
 if (flags==2) hacersombra(_colorf2[_MARCO][adaptador]);
 ultimoatributo=atributo;
@@ -821,11 +842,20 @@ cerrarven(&ventanas_privadas[0]);
 ventanas_privadas[0].memptr=&buffer_ventanas_privadas;
 }
 /*----------------------------------------------------------------------*/
+
+unsigned int tecsalir[]={ESC,0};
 char siconfirmacion(char *cabecera,char *mensaje) {
 int masancho,tec;
 char buffer[2];
-unsigned int tecsalir[]={ESC,0};
+int longi1,longi2;
 
+
+longi1=strlen(cabecera);
+longi2=strlen(mensaje);
+if (longi1>longi2) masancho=longi1+3;
+else masancho=longi2+3;
+
+/*
 asm  {
   push   si
   push   di
@@ -879,6 +909,7 @@ dimayorsi:asm {
   pop		si
   }
 masancho=_AX+3;
+*/
 ajventana(&ventanas_privadas[1],masancho);
 hacerven(&ventanas_privadas[1],_colorf2[_LOGOTI][adaptador]);
 centrar(1,0,cabecera);

@@ -1,6 +1,7 @@
 // #pragma inline
 
 #include <pcescrib.h>
+#include <pcventan.h>
 #include <conio.h>
 /*-------------------------------------------------------------------------*/
 #if	!defined(__COLORS)
@@ -48,13 +49,13 @@ typedef unsigned size_t;
 #define _SOLIDCURSOR   1
 #define _NORMALCURSOR  2
 /*-------------------------------------------------------------------------*/
-const int negritacolor=MAGENTA + (CYAN << 4);
-const int negritamono=WHITE + (BLACK << 4);
+const int oldnegritacolor=MAGENTA + (CYAN << 4);
+const int oldnegritamono=WHITE + (BLACK << 4);
 /*-------------------------------------------------------------------------*/
 unsigned char atributo,atre,ancho,oldmodo,actmodo,atr2,alto,wx,wy,wx1,wy1,
 ultimoatributo;
 unsigned int sipon;
-int cscreenA,cscreen,adaptador;
+int cscreenA,cscreen; //,adaptador;
 /*-------------------------------------------------------------------------*/
 static void pascal near __VPTR2(int x,int y); /*Devuelve el resultado en AX:offset DX:segmento*/
 size_t  _CType strlen	(const char *__s);
@@ -65,7 +66,7 @@ extern struct SCREEN  {
   unsigned salto,vseg;
   } _video;
 /*-------------------------------------------------------------------------*/
-void fillwin(unsigned char ch3) {
+void old_fillwin(unsigned char ch3) {
 asm {
 	push	dx
 	push	cx
@@ -96,7 +97,7 @@ bucle2:asm {
 	 }
 	}
 /*-------------------------------------------------------------------------*/
-void writechar(int x,int y,int contador,char caracter){
+void old_writechar(int x,int y,int contador,char caracter){
 	asm {
 	push	bx
 	push	cx
@@ -117,7 +118,7 @@ void writechar(int x,int y,int contador,char caracter){
 }
 /*-------------------------------------------------------------------------*/
 /* con '~'(0 no 1 si)*/
-void writestr(int x,int y,int sinegrita,char *frase)  {
+void old_writestr(int x,int y,int sinegrita,char *frase)  {
 unsigned char atrib2=atr2;
 
 asm {
@@ -181,7 +182,7 @@ asm {
 	}
 }
 /*-------------------------------------------------------------------------*/
-void writeatrib(int x,int y,int veces,char ch3){
+void old_writeatrib(int x,int y,int veces,char ch3){
 
 asm {
 	push	dx
@@ -208,7 +209,7 @@ aa00:	asm {
 	 }
 }
 /*-------------------------------------------------------------------------*/
-void campana(void){
+void old_campana(void){
 asm {
 	push	dx
 	mov 	ah,2
@@ -217,7 +218,7 @@ asm {
 	pop	dx};
 }
 /*-------------------------------------------------------------------------*/
-void writeinit(void)  {
+void old_writeinit(void)  {
 asm {
 	  push 	ds
 	  push	bx
@@ -281,7 +282,7 @@ fin3:asm {
 	}
 }
 /*-------------------------------------------------------------------------*/
-void writefin(void) {
+void old_writefin(void) {
 asm {
 	push	bx
 	push	cx
@@ -308,10 +309,10 @@ setcursor:asm {
   };
 };
 /*-------------------------------------------------------------------------*/
-void centrar(int linea, int condicion,char *frase)  {
+void old_centrar(int linea, int condicion,char *frase)  {
   writestr((ancho-strlen(frase)+1) /2,linea,condicion,frase);   }
 /*-------------------------------------------------------------------------*/
-void right(int linea,int condicion,char *frase)  {
+void old_right(int linea,int condicion,char *frase)  {
   writestr(linea,ancho-strlen(frase)+1,condicion,frase);   }
 /*-------------------------------------------------------------------------*/
 static void pascal near __VPTR2(int x,int y) {
@@ -338,7 +339,7 @@ asm {
   };
 };
 /*-------------------------------------------------------------------------*/
-void __setcursortype (int tipo) {
+void old__setcursortype (int tipo) {
 asm {
 	push 	bx
 	push	cx
@@ -386,7 +387,7 @@ salsetcursortype:asm {
 	}
 };
 /*-------------------------------------------------------------------------*/
-void _gotoxy(unsigned char x,unsigned char y) {
+void old_gotoxy(unsigned char x,unsigned char y) {
 asm {
 	push	dx
 	push	bx
@@ -409,7 +410,7 @@ asm {
 /*-------------------------------------------------------------------------*/
 #pragma warn -rvl
 
-int _wherex(void) {
+int old_wherex(void) {
 asm {
 	push	dx
 	push	bx
@@ -427,7 +428,7 @@ asm {
 	};
 };
 /*-------------------------------------------------------------------------*/
-int _wherey (void) {
+int old_wherey (void) {
 asm {
 	push	bx
 	push	dx
@@ -451,74 +452,41 @@ int writemargen (int x1,int y1,int condi,char *fr)
 {char buffer[80];
 int longi;
 
-#iddef FARPOINTERS
-asm les	di,fr
-#else
-asm mov	di,fr
-#endif
-asm xor	dx,dx ;dx contador de longitud cadena
-otro:asm {
-	cmp es:[di],0
-	jz	fincadena
-	inc 	di
-	inc	dx
-	jr otro
-	}
-longi=_DX;
+longi=strlen(fr);
+
+
 if (x1>ancho || x1==ancho) return 0;
 if (y1>alto) return 0;
 if (x1<1) return 0;
 if (y1<1) return 0;
-asm {
-	mov	ax,x1
-	add	ax,dx
-	cmp	ax,ancho
-	je		noigual
-	jz		fin
-	}
+if (x1+longi!=ancho) return 0;
+
 writestr(x1,y1,condi,fr);
-noigual:asm {
-lea	si,buffer
-push	si
-push	di
-}
-#ifdef FARPOINTERS
-asm les di,fr
-#else
-asm mov	di,fr
-#endif
-asm {
-	mov	cx,longi
-	sub	dx,x1
-	};
-otro:asm {mov	al,es:[di]
-	mov	ss:[si],al
-	inc	si
-	inc	di
-	loop	otro
-	mov   ss:[si],0 ;buffer[ancho-x1]='\x0';
-	pop	di
-	pop	si
-	}
+noigual:
+
+strcpy(buffer,fr);
+
+buffer[ancho-x1]='\x0';
+
 writestr(x1,y1,condi,buffer);
 fin:return (((x1+longi)!=ancho) ? (longi) : (ancho-x1-1));
 }
 /*-------------------------------------------------------------------------*/
-void guardaven() {
+void old_guardaven() {
 cscreen2=cscreen;
 cscreenA2=cscreenA;
 alto2=alto;
 ancho2=ancho;
 atrsalva=atributo;}
 /*-------------------------------------------------------------------------*/
-void restauraven(){
+void old_restauraven(){
 cscreen=cscreen2;
 cscreenA=cscreenA2;
 alto=alto2;
 ancho=ancho2;
 atributo=atrsalva;}
 /*----------------------------------------------------------------------*/
-void cambiaratrmarco(int aa){
+void old_cambiaratrmarco(int aa){
 register contador2;
 
 writeatrib (1,1,1,aa);

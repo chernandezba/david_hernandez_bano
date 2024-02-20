@@ -337,6 +337,11 @@ if (in->totalsec) {
  else {
  //si in->totalsec es 0 entonces en in->grantotalsectores
  //est  el n£mero de sectores
+ if (in->sectcluster==0) {
+ bits=12;
+ return 1;
+ }
+
  if ((in->grantotalsectores / in->sectcluster)>(1 << 12)-1)
   //si tiene m s de 4095 clusters la fat es de 16 bits
   bits=16;

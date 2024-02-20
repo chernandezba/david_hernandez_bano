@@ -233,7 +233,8 @@ if (errores[errorno].condicion==SISALIR)  {
   fillwin(' ');
   _gotoxy(1,1);
   __setcursortype(_NORMALCURSOR);
-  exit(EXIT_FAILURE);  }
+  //exit(EXIT_FAILURE);
+  }
 if (errores[errorno].condicion==NOSALIR) {
   sprintf(buffererror,"ERROR %d : %s ",errorno,errores[errorno].menerr);
   pon_mensaje("ERROR",buffererror,1);
@@ -643,4 +644,3 @@ segmento=(unsigned int)(dirabs >> 4);
 offset=(unsigned int)(dirabs-((unsigned long)segmento << 4));
 return(MK_FP(segmento,offset));
 };
-

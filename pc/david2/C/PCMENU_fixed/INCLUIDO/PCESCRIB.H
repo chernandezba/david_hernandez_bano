@@ -1,9 +1,10 @@
 #ifndef __PCESCRIB.H__
 #define __PCESCRIB.H__
 //variables
-extern int cscreen,cscreenA,adaptador,VENTANASEL,ULTIMAVENTANASEL,
+extern int cscreen,cscreenA,adaptador,VENTANASEL,ULTIMAVENTANASEL;
 extern unsigned char atributo,unidadesdisco,wx,wy,wx1,wy1,ancho,alto,
 ultimoatributo;
+extern int negritacolor,negritamono;
 
 //funciones
 void writeinit(void);
