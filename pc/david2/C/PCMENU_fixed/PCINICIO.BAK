@@ -1,0 +1,74 @@
+#include <string.h>
+#include <dos.h>
+#include <dir.h>
+#include <ctype.h>
+#include <stdlib.h>
+#include <pcutil.h>
+#include <pcdisco.h>
+#include <pcescrib.h>
+
+/*------------------------------------------------------------------*/
+unsigned _stklen=8192;
+int unidexe;
+char pathori[MAXPATH],nombretemp[MAXPATH],nombrefichero[MAXPATH];
+/*------------------------------------------------------------------*/
+static void near pcmenu_init();
+/*-------------------------------------------------------------------------*/
+void borratemp() {
+
+borrafich(nombretemp);
+
+};
+/*------------------------------------------------------------------*/               
+static void near pcmenu_init() {
+char *pun;
+
+errorespon();
+longitudclave=strlen(clave);
+strcpy(nombretemp,_argv[0]);
+strcpy(nombrefichero,_argv[0]);
+pun=strchr(nombretemp,0);
+pun-=3;
+memcpy(pun,"TEM",3);
+pun=strchr(nombrefichero,0);
+pun-=3;
+memcpy(pun,"DAT",3);
+unidactual=getdisk();
+unidexe=unidactual;
+getcwd(pathori,MAXPATH);
+strcpy(diractual,pathori);
+pcdisco_init();
+pun=_argv[1];
+if (_argc!=1) {
+  if (strlen(_argv[1])==2 && pun[1]==':')  {
+	 strupr(pun);
+	  if (isalpha(*pun))
+		 if (strchr(unidlogicas,*pun)!=NULL)
+			cambiadisco(*pun-'A');
+  };
+};
+borratemp();
+writeinit();
+pcopcion_init();
+}
+/*-------------------------------------------------------------------------*/
+void pcmenu_fin(void) {
+setdisk(unidexe);
+chdir(pathori);
+hacerven(26,colorf2(SALIDADOS));
+};
+/*-------------------------------------------------------------------------*/
+int main (void)  {
+
+atexit(writefin);
+atexit(pcmenu_fin);
+pcmenu_init();
+compruebaconfiguracion();
+buscararbol(cogedisco());
+hacerven(6,colorf2(ARBOLV));
+ponerarbol(0,arbol);
+poner_etiqueta_disco();
+mostrardirectorio(cogedisco());
+seleccionaopcion();
+return(0);
+}
