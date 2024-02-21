@@ -5,7 +5,7 @@ Sin embargo, no parece ser una versión finalizada pues la mayoría de opciones 
 
 Correcciones realizadas:
 
-- Errores de sintaxis: falta ; en setencia export en PCESCRIB.H
+- Errores de sintaxis: falta ; en sentencia export en PCESCRIB.H
 
 - Control de división por cero en PCDISCO.C en funcion cogerinfodisco
 
@@ -38,5 +38,3 @@ Algunas capturas:
 
 ![pcmenu7](pcmenu7.png)
 
-Cosas a considerar:
-....
