@@ -1,4 +1,5 @@
-Catcher
+Catcher.
+
 https://apps.rebble.io/es_ES/application/5668333f53fae73a07000039?query=catcher&section=watchapps
 
  It's a simple catcher game.
@@ -30,8 +31,9 @@ https://apps.rebble.io/es_ES/application/5668333f53fae73a07000039?query=catcher&
  Default language is spanish.
 
 
-Last version published on Pebble/Rebble store: 1.3 on 21 September 2016 13:31:26 GMT
-Last source code version 1.5 on 10 July 2018 (seems not to be published on the store)
+Last version published on Pebble/Rebble store: 1.3 on 21 September 2016 13:31:26 GMT.
+
+Last source code version 1.5 on 10 July 2018 (seems not to be published on the store).
 
 Some screenshots:
 
