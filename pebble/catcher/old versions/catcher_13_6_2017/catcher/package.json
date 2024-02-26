@@ -1,0 +1,128 @@
+{
+    "author": "dhernandezb2004@yahoo.es",
+    "dependencies": {},
+    "keywords": [],
+    "name": "catcher",
+    "pebble": {
+        "displayName": "Catcher",
+        "enableMultiJS": false,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/reloj_4.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_RELOJ_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/reloj_3.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_RELOJ_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/reloj_2.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_RELOJ_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/reloj_1.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_RELOJ_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/reloj.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_RELOJ",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto_2_4.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_2_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto_2_3.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_2_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto_2_2.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_2_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto1_4.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_1_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto1_3.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_1_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto1_2.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_1_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/vida1.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_LIFE1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto2.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_2",
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/catcher1.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_CATCHER1",
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/objeto1.png",
+                    "memoryFormat": "1Bit",
+                    "name": "IMAGE_OBJETO_1",
+                    "type": "bitmap"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt"
+        ],
+        "uuid": "4a1124c0-a8f6-447b-a5f4-b68bdcb309d7",
+        "watchapp": {
+            "watchface": false
+        }
+    },
+    "version": "1.4.0"
+}

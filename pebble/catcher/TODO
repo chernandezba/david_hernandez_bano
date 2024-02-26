@@ -1,0 +1,20 @@
+Contents from ./src/c/versiones.c:
+
+
+//mirar si reemplazar bien creada, esta en utiles.c
+//scroll de ayuda no va bien. mensaje de ayuda no se ve bien. todo junto y sin saltos
+//de linea. no se ve toda la ayuda
+//mensajes de ayuda de momento acabados, implementarlos en ayuda.c y ayuda.h y probar
+//que se vea bien en los 4 idiomas
+//haciendo ayuda (usar ScrollLayer para poner ayuda, en layer de Scroll https://developer.pebble.com/docs/c/User_Interface/Layers/ScrollLayer/),
+//usa pon_ayuda_window en ayuda.c. usa ayuda.c y ayuda.h. Usaremos uno o mas layers mas altos que ventana principal
+//del pebble que pondremos en el ScrollLayer.
+//que se pueda configurar velocidad de aceleración de paleta
+//que la vibración se pueda seleccionar para modo vidas y para modo por tiempo por separado
+//mensajes en multiidioma, falta actualizar mensajes de waray
+//Poner que de una vida cada n puntos o a ciertos puntos o una mezcla de los 2.
+//         Poner manual de instrucciones explicando lo que hay que hacer y lo que vale
+//         cada gota y explicar cada cuanto hay una vida y una gota mas.
+// implementar modo del doble de grande todo gotas a 16x16, paleta al double, indicador de tiempo
+//al doble, indicador de vidas el doble
+
