@@ -1,0 +1,11 @@
+Si se accede a la int 25h con el método para particiones
+menores de 32 Mb y es una partición mayor de 32 Mb retorna
+con el carry alzado y ax=0207h , entonces se ha de llamar
+a la int 25h de la otra manera (para acceder a interrupciones
+mayores de 32 Mb)
+Nota : Bajo windows 95,en una ventana de MS-DOS este error
+no se da,pero ejecutando un programa saliendo de windows
+este error si se da.
+Bajo windows 95 a veces ,
+no se puede hacer un chdir con los nombres
+cortos correspondientes de los nombres largos en los CD-ROM

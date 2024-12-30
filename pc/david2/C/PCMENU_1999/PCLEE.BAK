@@ -1,0 +1,11 @@
+Seguir mirando Pcdisco.c
+Mirar cuando se accede a un disco vacio,puede mostrar
+nombres de fichero que no existen
+Mirar errordisco
+Mirar cuando ejecuta una aplicacion
+Mirar cuando vuelve de SHELL al DOS,
+se desselecciona el fichero activo
+Mirar en cuando pone información de disco,
+el espcio disponible y el total no lo calcula bien
+Mirar cuando se pulsa CTRL-ENTER
+Mirar PCEJEC (da abnormal program termination)
