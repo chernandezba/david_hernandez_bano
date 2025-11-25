@@ -39,8 +39,8 @@
 //    4/10/2016 : En modo vidas incrementa 1a vida a los SI_N_PUNTOS_VIDA_INCR(100) puntos y las siguientes vidas cada
 //                CADA_N_PUNTOS_VIDA_INCR(500) puntos.
 //    12/9/2017 : Cambiada letra de highscores a 18 (FONT_KEY_GOTHIC_18), antes era una 14.
-//    Versión 1.5
-
+//    Versión 1.5 (26/11/2025)
+//    26/11/2025 : Recuperada versión y subida a Rebble Store
 
 //mirar si reemplazar bien creada, esta en utiles.c
 //scroll de ayuda no va bien. mensaje de ayuda no se ve bien. todo junto y sin saltos
