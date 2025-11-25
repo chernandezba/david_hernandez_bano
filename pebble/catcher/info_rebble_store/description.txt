@@ -1,0 +1,29 @@
+This is the last version released after his author, David (my brother), passed away on 2023.
+
+ It's a simple catcher game.
+
+ You have 2 modes of play : time mode and lives mode.
+
+ In time mode you will play until time goes to 0.
+
+ In lives mode you will play until no lives left.
+
+ You have to catch tears (black and white).
+
+ In time mode you can catch a clock for adding time.
+
+ Black tear add two points to score, white add four points.
+
+ Added animation of objects crashed.
+
+ In lives mode there are five lives and for the moment there weren't added none while playing.
+
+ It saves the 5 hightest score to pebble for every mode : 5 for lives mode and another 5 for time mode.
+
+ Menu and messages are shown in 4 configurable languages : spanish , english , tagalog and waray.
+
+ Waray language already not yet, waray for the moment is the same as english.
+
+ Tagalog language with the help of google translate, not revised.
+
+ Default language is spanish.
