@@ -1,6 +1,10 @@
 Catcher.
 
+Last App uploaded by David:
 https://apps.rebble.io/es_ES/application/5668333f53fae73a07000039?query=catcher&section=watchapps
+
+Updated App uploaded by me (Cesar, his brother):
+https://apps.rebble.io/en_US/application/692639773148ef0009f1d825
 
  It's a simple catcher game.
 
