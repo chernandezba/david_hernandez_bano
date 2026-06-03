@@ -4,7 +4,12 @@ Last App uploaded by David:
 https://apps.rebble.io/es_ES/application/5668333f53fae73a07000039?query=catcher&section=watchapps
 
 Updated App uploaded by me (Cesar, his brother):
+
+Rebble Store:
 https://apps.rebble.io/en_US/application/692639773148ef0009f1d825
+
+Pebble Store:
+https://apps.repebble.com/fe736f2b36744abca1e31a23
 
  It's a simple catcher game.
 
@@ -35,9 +40,9 @@ https://apps.rebble.io/en_US/application/692639773148ef0009f1d825
  Default language is spanish.
 
 
-Last version published on Pebble/Rebble store: 1.3 on 21 September 2016 13:31:26 GMT.
+Last version published by David on Pebble/Rebble store: 1.3 on 21 September 2016 13:31:26 GMT.
 
-Last source code version 1.5 on 10 July 2018 (seems not to be published on the store).
+Last source code version 1.5 on 10 July 2018 was created by David but was not be published on the store.
 
 Some screenshots:
 
